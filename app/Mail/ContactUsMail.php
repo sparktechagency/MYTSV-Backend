@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
@@ -9,17 +8,17 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class OtpMail extends Mailable implements ShouldQueue
+class ContactUsMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
     /**
      * Create a new message instance.
      */
-    public $otp;
-    public function __construct($otp)
+    public $message_data;
+    public function __construct($message_data)
     {
-        $this->otp = $otp;
+        $this->message_data = $message_data;
     }
 
     /**
@@ -28,7 +27,7 @@ class OtpMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Otp Mail',
+            subject: 'New Contact Message',
         );
     }
 
@@ -38,7 +37,7 @@ class OtpMail extends Mailable implements ShouldQueue
     public function content(): Content
     {
         return new Content(
-            view: 'email.otp',
+            view: 'email.contact_us',
         );
     }
 

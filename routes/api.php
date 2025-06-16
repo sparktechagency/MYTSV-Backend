@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Backend\FAQController;
+use App\Http\Controllers\Backend\SettingController;
 use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
 
@@ -25,12 +27,16 @@ Route::group(['middleware' => 'api'], function ($router) {
 
         // user routes
         Route::middleware('user')->as('user')->group(function () {
-
+            Route::resource('faqs', FAQController::class);
+            Route::post('send-message', [SettingController::class, 'sendMessage']);
         });
 
         // admin routes
         Route::middleware('admin')->prefix('admin/')->as('admin')->group(function () {
-
+            Route::put('about-us/{id}', [SettingController::class, 'updateAboutUs']);
+            Route::post('page', [SettingController::class, 'createOrUpdatePage']);
+            Route::post('contact', [SettingController::class, 'updateContact']);
+            Route::resource('faqs', FAQController::class);
         });
 
         // common routes
@@ -38,6 +44,10 @@ Route::group(['middleware' => 'api'], function ($router) {
             Route::get('notifications', [NotificationController::class, 'notifications']);
             Route::get('mark-notification/{id}', [NotificationController::class, 'singleMark']);
             Route::get('mark-all-notification', [NotificationController::class, 'allMark']);
+
+            Route::get('about-us', [SettingController::class, 'getAboutUs']);
+            Route::get('page', [SettingController::class, 'getPage']);
+            Route::get('contact', [SettingController::class, 'getContact']);
         });
     });
 });
