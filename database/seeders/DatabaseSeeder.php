@@ -19,6 +19,8 @@ class DatabaseSeeder extends Seeder
             PageSeeder::class,
             FAQSeeder::class,
             ContactSeeder::class,
+            CategorySeeder::class,
+            BlogSeeder::class,
         ]);
     }
 }
