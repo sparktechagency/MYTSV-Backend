@@ -4,9 +4,9 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Backend\BlogController;
 use App\Http\Controllers\Backend\CategoryController;
 use App\Http\Controllers\Backend\FAQController;
+use App\Http\Controllers\Backend\PricingController;
 use App\Http\Controllers\Backend\SettingController;
 use App\Http\Controllers\NotificationController;
-use App\Models\Blog;
 use Illuminate\Support\Facades\Route;
 
 Route::group(['middleware' => 'api'], function ($router) {
@@ -39,7 +39,8 @@ Route::group(['middleware' => 'api'], function ($router) {
             Route::put('about-us/{id}', [SettingController::class, 'updateAboutUs']);
             Route::post('page', [SettingController::class, 'createOrUpdatePage']);
             Route::post('contact', [SettingController::class, 'updateContact']);
-            Route::resource('categories', CategoryController::class)->except('index','show');
+            Route::post('update-price', [PricingController::class, 'updatePrice']);
+            Route::resource('categories', CategoryController::class)->except('index', 'show');
             Route::resource('faqs', FAQController::class);
             Route::resource('blogs', BlogController::class);
         });
@@ -58,5 +59,6 @@ Route::group(['middleware' => 'api'], function ($router) {
 
     // token free routes
     Route::resource('categories', CategoryController::class)->only('index');
-    Route::resource('blogs', BlogController::class)->only('index','show');
+    Route::resource('blogs', BlogController::class)->only('index', 'show');
+    Route::get('get-price', [PricingController::class, 'getPrice']);
 });
