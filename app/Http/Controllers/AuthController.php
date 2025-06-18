@@ -288,18 +288,18 @@ class AuthController extends Controller
             $user       = Auth::user();
             $user->name = $request->name ?? $user->name;
             if ($request->hasFile('image')) {
-                if ($user->getRawOriginal('avatar') && $user->getRawOriginal('avatar') !== 'user/default_avatar.png') {
-                    $old_photo_location = public_path('uploads/' . $user->getRawOriginal('avatar'));
-
-                    if (File::exists($old_photo_location)) {
-                        File::delete($old_photo_location);
+                $photo_location     = public_path('uploads/user');
+                $old_photo          = basename($user->avatar);
+                $old_photo_location = $photo_location . '/' . $old_photo;
+                if ($old_photo != 'default_avatar.png') {
+                    if (file_exists($old_photo_location)) {
+                        unlink($old_photo_location);
                     }
                 }
 
-                $image      = $request->file('image');
-                $final_name = time() . '.' . $image->getClientOriginalExtension();
-                $image->move(public_path('uploads/user'), $final_name);
-                $user->avatar = $final_name;
+                $final_photo_name = time() . '.' . $request->image->extension();
+                $request->image->move($photo_location, $final_photo_name);
+                $user->avatar = $final_photo_name;
             }
             $user->save();
         } elseif (Auth::user()->role == 'USER') {
@@ -310,7 +310,7 @@ class AuthController extends Controller
                 'bio'          => 'required|string',
                 'locations'    => 'required',
                 'services'     => 'required',
-                'avatar'       => 'sometimes|image|mimes:png,jpg,jpeg',
+                'image'        => 'sometimes|image|mimes:png,jpg,jpeg',
                 'cover_image'  => 'sometimes|image|mimes:png,jpg,jpeg',
             ]);
             if ($validator->fails()) {
@@ -325,36 +325,35 @@ class AuthController extends Controller
             $user->channel_name = $request->channel_name ?? $user->channel_name;
             $user->contact      = $request->contact ?? $user->contact;
             $user->bio          = $request->bio ?? $user->bio;
-            $user->locations    = json_encode($request->locations,true);
-            $user->services    = json_encode($request->services,true);
-
-            if ($request->hasFile('avatar')) {
-                if ($user->getRawOriginal('avatar') && $user->getRawOriginal('avatar') !== 'user/default_avatar.png') {
-                    $old_photo_location = public_path('uploads/' . $user->getRawOriginal('avatar'));
-
-                    if (File::exists($old_photo_location)) {
-                        File::delete($old_photo_location);
+            $user->locations    = $request->locations;
+            $user->services     = $request->services;
+            if ($request->hasFile('image')) {
+                $photo_location     = public_path('uploads/user');
+                $old_photo          = basename($user->avatar);
+                $old_photo_location = $photo_location . '/' . $old_photo;
+                if ($old_photo != 'default_avatar.png') {
+                    if (file_exists($old_photo_location)) {
+                        unlink($old_photo_location);
                     }
                 }
 
-                $image      = $request->file('avatar');
-                $final_name = time() . '.' . $image->getClientOriginalExtension();
-                $image->move(public_path('uploads/user'), $final_name);
-                $user->avatar = $final_name;
+                $final_photo_name = time() . '.' . $request->image->extension();
+                $request->image->move($photo_location, $final_photo_name);
+                $user->avatar = $final_photo_name;
             }
             if ($request->hasFile('cover_image')) {
-                if ($user->getRawOriginal('cover_image') && $user->getRawOriginal('cover_image') !== 'cover/default_cover_image.jpg') {
-                    $old_photo_location = public_path('uploads/' . $user->getRawOriginal('cover_image'));
-
-                    if (File::exists($old_photo_location)) {
-                        File::delete($old_photo_location);
+                $photo_location     = public_path('uploads/cover');
+                $old_photo          = basename($user->cover_image);
+                $old_photo_location = $photo_location . '/' . $old_photo;
+                if ($old_photo != 'default_cover_image.jpg') {
+                    if (file_exists($old_photo_location)) {
+                        unlink($old_photo_location);
                     }
                 }
 
-                $image      = $request->file('cover_image');
-                $final_name = time() . '.' . $image->getClientOriginalExtension();
-                $image->move(public_path('uploads/cover'), $final_name);
-                $user->cover_image = $final_name;
+                $final_photo_name = time() . '.' . $request->cover_image->extension();
+                $request->cover_image->move($photo_location, $final_photo_name);
+                $user->cover_image = $final_photo_name;
             }
             $user->save();
         }
