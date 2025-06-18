@@ -14,9 +14,14 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('channel_name')->nullable();
             $table->string('email')->unique();
-            $table->string('address')->nullable();
+            $table->string('contact')->nullable();
+            $table->longText('bio')->nullable();
+            $table->json('locations')->nullable();
+            $table->json('services')->nullable();
             $table->string('avatar')->default('default_avatar.png');
+            $table->string('cover_image')->default('default_cover_image.jpg');
             $table->enum('role', ['ADMIN', 'USER'])->default('USER');
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');

@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -69,6 +70,7 @@ class AuthController extends Controller
         }
         $user = User::create([
             'name'              => $request->name,
+            'channel_name'      => $request->name,
             'email'             => $request->email,
             'password'          => Hash::make(Str::random(16)),
             'role'              => 'USER',
@@ -98,10 +100,10 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name'     => 'required',
-            'email'    => 'required|email|unique:users,email',
-            'address'  => 'required|string|max:255',
-            'password' => 'required|string|min:4',
+            'name'         => 'required|string|max:255',
+            'channel_name' => 'required|string|max:255',
+            'email'        => 'required|email|unique:users,email',
+            'password'     => 'required|string|min:4',
         ]);
         if ($validator->fails()) {
             $firstError = collect($validator->errors()->all())->first();
@@ -113,12 +115,19 @@ class AuthController extends Controller
         }
         $otp            = rand(100000, 999999);
         $otp_expires_at = now()->addMinutes(10);
-        $user           = User::create([
+        $avatarUrl      = 'https://ui-avatars.com/api/?name=' . urlencode($request->channel_name) . '&background=random&bold=true&size=256';
+        $response       = Http::get($avatarUrl);
+        $filename       = time() . '.png';
+        $savePath       = public_path('uploads/user/' . $filename);
+        file_put_contents($savePath, $response->body());
+
+        $user = User::create([
             'name'           => $request->name,
+            'channel_name'   => $request->channel_name,
             'email'          => $request->email,
-            'address'        => $request->address,
             'password'       => Hash::make($request->password),
             'role'           => 'USER',
+            'avatar'         => $filename,
             'otp'            => $otp,
             'otp_expires_at' => $otp_expires_at,
             'status'         => 'inactive',
@@ -263,38 +272,92 @@ class AuthController extends Controller
 
     public function editProfile(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name'    => 'sometimes|string|max:255',
-            'address' => 'sometimes|string|max:255',
-            'image'   => 'sometimes|image|mimes:png,jpg,jpeg',
-        ]);
-        if ($validator->fails()) {
-            $firstError = collect($validator->errors()->all())->first();
+        if (Auth::user()->role == 'ADMIN') {
+            $validator = Validator::make($request->all(), [
+                'name'  => 'required|string|max:255',
+                'image' => 'sometimes|image|mimes:png,jpg,jpeg',
+            ]);
+            if ($validator->fails()) {
+                $firstError = collect($validator->errors()->all())->first();
 
-            return response()->json([
-                'message' => $firstError,
-                'errors'  => $validator->errors(),
-            ], 422);
-        }
-        $user          = Auth::user();
-        $user->name    = $request->name ?? $user->name;
-        $user->address = $request->address ?? $user->address;
-        if ($request->hasFile('image')) {
-            if ($user->getRawOriginal('avatar') && $user->getRawOriginal('avatar') !== 'user/default_avatar.png') {
-                $old_photo_location = public_path('uploads/' . $user->getRawOriginal('avatar'));
-
-                if (File::exists($old_photo_location)) {
-                    File::delete($old_photo_location);
-                }
+                return response()->json([
+                    'message' => $firstError,
+                    'errors'  => $validator->errors(),
+                ], 422);
             }
+            $user       = Auth::user();
+            $user->name = $request->name ?? $user->name;
+            if ($request->hasFile('image')) {
+                if ($user->getRawOriginal('avatar') && $user->getRawOriginal('avatar') !== 'user/default_avatar.png') {
+                    $old_photo_location = public_path('uploads/' . $user->getRawOriginal('avatar'));
 
-            $image      = $request->file('image');
-            $final_name = time() . '.' . $image->getClientOriginalExtension();
-            $image->move(public_path('uploads/user'), $final_name);
-            $user->avatar = $final_name;
+                    if (File::exists($old_photo_location)) {
+                        File::delete($old_photo_location);
+                    }
+                }
+
+                $image      = $request->file('image');
+                $final_name = time() . '.' . $image->getClientOriginalExtension();
+                $image->move(public_path('uploads/user'), $final_name);
+                $user->avatar = $final_name;
+            }
+            $user->save();
+        } elseif (Auth::user()->role == 'USER') {
+            $validator = Validator::make($request->all(), [
+                'name'         => 'required|string|max:255',
+                'channel_name' => 'required|string|max:255',
+                'contact'      => 'required|string|max:255',
+                'bio'          => 'required|string',
+                'locations'    => 'required',
+                'services'     => 'required',
+                'avatar'       => 'sometimes|image|mimes:png,jpg,jpeg',
+                'cover_image'  => 'sometimes|image|mimes:png,jpg,jpeg',
+            ]);
+            if ($validator->fails()) {
+                $firstError = collect($validator->errors()->all())->first();
+                return response()->json([
+                    'message' => $firstError,
+                    'errors'  => $validator->errors(),
+                ], 422);
+            }
+            $user               = Auth::user();
+            $user->name         = $request->name ?? $user->name;
+            $user->channel_name = $request->channel_name ?? $user->channel_name;
+            $user->contact      = $request->contact ?? $user->contact;
+            $user->bio          = $request->bio ?? $user->bio;
+            $user->locations    = json_encode($request->locations,true);
+            $user->services    = json_encode($request->services,true);
+
+            if ($request->hasFile('avatar')) {
+                if ($user->getRawOriginal('avatar') && $user->getRawOriginal('avatar') !== 'user/default_avatar.png') {
+                    $old_photo_location = public_path('uploads/' . $user->getRawOriginal('avatar'));
+
+                    if (File::exists($old_photo_location)) {
+                        File::delete($old_photo_location);
+                    }
+                }
+
+                $image      = $request->file('avatar');
+                $final_name = time() . '.' . $image->getClientOriginalExtension();
+                $image->move(public_path('uploads/user'), $final_name);
+                $user->avatar = $final_name;
+            }
+            if ($request->hasFile('cover_image')) {
+                if ($user->getRawOriginal('cover_image') && $user->getRawOriginal('cover_image') !== 'cover/default_cover_image.jpg') {
+                    $old_photo_location = public_path('uploads/' . $user->getRawOriginal('cover_image'));
+
+                    if (File::exists($old_photo_location)) {
+                        File::delete($old_photo_location);
+                    }
+                }
+
+                $image      = $request->file('cover_image');
+                $final_name = time() . '.' . $image->getClientOriginalExtension();
+                $image->move(public_path('uploads/cover'), $final_name);
+                $user->cover_image = $final_name;
+            }
+            $user->save();
         }
-        $user->save();
-
         return response()->json([
             'status'  => true,
             'message' => 'Profile updated successfully',

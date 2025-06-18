@@ -5,6 +5,8 @@ use App\Http\Controllers\Backend\BlogController;
 use App\Http\Controllers\Backend\CategoryController;
 use App\Http\Controllers\Backend\FAQController;
 use App\Http\Controllers\Backend\PricingController;
+use App\Http\Controllers\Backend\PromotionalBanner;
+use App\Http\Controllers\Backend\SEOController;
 use App\Http\Controllers\Backend\SettingController;
 use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
@@ -40,9 +42,11 @@ Route::group(['middleware' => 'api'], function ($router) {
             Route::post('page', [SettingController::class, 'createOrUpdatePage']);
             Route::post('contact', [SettingController::class, 'updateContact']);
             Route::post('update-price', [PricingController::class, 'updatePrice']);
+            Route::post('update-seo', [SEOController::class, 'updateSeo']);
             Route::resource('categories', CategoryController::class)->except('index', 'show');
             Route::resource('faqs', FAQController::class);
             Route::resource('blogs', BlogController::class);
+            Route::resource('banners', PromotionalBanner::class)->except('index');
         });
 
         // common routes
@@ -54,6 +58,7 @@ Route::group(['middleware' => 'api'], function ($router) {
             Route::get('about-us', [SettingController::class, 'getAboutUs']);
             Route::get('page', [SettingController::class, 'getPage']);
             Route::get('contact', [SettingController::class, 'getContact']);
+
         });
     });
 
@@ -61,4 +66,6 @@ Route::group(['middleware' => 'api'], function ($router) {
     Route::resource('categories', CategoryController::class)->only('index');
     Route::resource('blogs', BlogController::class)->only('index', 'show');
     Route::get('get-price', [PricingController::class, 'getPrice']);
+    Route::get('get-seo', [SEOController::class, 'getSeo']);
+    Route::resource('banners', PromotionalBanner::class)->only('index');
 });
