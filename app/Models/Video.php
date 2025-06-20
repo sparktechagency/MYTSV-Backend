@@ -14,4 +14,13 @@ class Video extends Model
     {
         return asset('uploads/thumbnail/' . $thumbnail);
     }
+
+    public function user()
+    {
+        return $this->belongsTo('user');
+    }
+    public function getTagsAttribute($value)
+    {
+        return json_decode($value);
+    }
 }

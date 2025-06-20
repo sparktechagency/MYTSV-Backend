@@ -13,17 +13,18 @@ return new class extends Migration
     {
         Schema::create('videos', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('category_id')->constrained('categories')->cascadeOnDelete();
             $table->enum('type', ['video', 'link']);
+            $table->string('title');
+            $table->longText('description');
+            $table->string('thumbnail');
             $table->string('video')->nullable();
             $table->longText('link')->nullable();
             $table->string('states');
             $table->string('city');
             $table->json('tags');
-            $table->string('title');
             $table->boolean('is_promoted')->default(false);
-            $table->foreignId('category_id')->constrained('categories')->cascadeOnDelete();
-            $table->string('thumbnail');
-            $table->longText('description');
             $table->enum('visibility', ['Everyone', 'Only me'])->default('Everyone');
             $table->timestamps();
         });

@@ -8,6 +8,8 @@ use App\Http\Controllers\Backend\PricingController;
 use App\Http\Controllers\Backend\PromotionalBanner;
 use App\Http\Controllers\Backend\SEOController;
 use App\Http\Controllers\Backend\SettingController;
+use App\Http\Controllers\Frontend\StripePaymentController;
+use App\Http\Controllers\Frontend\VideoController;
 use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
 
@@ -33,7 +35,13 @@ Route::group(['middleware' => 'api'], function ($router) {
         // user routes
         Route::middleware('user')->as('user')->group(function () {
             Route::resource('faqs', FAQController::class);
+            Route::resource('videos', VideoController::class);
+            Route::post('videos/bulk-delete', [VideoController::class, 'bulkDelete']);
+            Route::post('videos/change-visibility/{id}', [VideoController::class, 'changeVisibility']);
             Route::post('send-message', [SettingController::class, 'sendMessage']);
+
+            Route::post('payment-intent', [StripePaymentController::class, 'paymentIntent']);
+            Route::post('payment-success', [StripePaymentController::class, 'paymentSuccess']);
         });
 
         // admin routes
