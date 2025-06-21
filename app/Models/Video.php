@@ -17,8 +17,9 @@ class Video extends Model
 
     public function user()
     {
-        return $this->belongsTo('user');
+        return $this->belongsTo(User::class);
     }
+
     public function getTagsAttribute($value)
     {
         return json_decode($value);

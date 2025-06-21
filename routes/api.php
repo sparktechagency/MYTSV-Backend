@@ -1,20 +1,20 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\Backend\FAQController;
-use App\Http\Controllers\Backend\SEOController;
 use App\Http\Controllers\Backend\BlogController;
-use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\Frontend\VideoController;
-use App\Http\Controllers\Backend\PricingController;
-use App\Http\Controllers\Backend\PromotionalBanner;
-use App\Http\Controllers\Backend\SettingController;
 use App\Http\Controllers\Backend\CategoryController;
 use App\Http\Controllers\Backend\DashboardController;
+use App\Http\Controllers\Backend\FAQController;
+use App\Http\Controllers\Backend\PricingController;
+use App\Http\Controllers\Backend\PromotionalBanner;
+use App\Http\Controllers\Backend\SEOController;
+use App\Http\Controllers\Backend\SettingController;
 use App\Http\Controllers\Backend\TransactionController;
-use SebastianBergmann\CodeCoverage\Report\Html\Dashboard;
 use App\Http\Controllers\Frontend\StripePaymentController;
+use App\Http\Controllers\Frontend\VideoController;
+use App\Http\Controllers\Frontend\WatchHistoryController;
+use App\Http\Controllers\NotificationController;
+use Illuminate\Support\Facades\Route;
 
 Route::group(['middleware' => 'api'], function ($router) {
 
@@ -30,6 +30,7 @@ Route::group(['middleware' => 'api'], function ($router) {
 
     Route::middleware(['auth:api', 'verified.user'])->prefix('/')->group(function () {
         Route::get('profile', [AuthController::class, 'profile']);
+        Route::get('delete-profile', [AuthController::class, 'deleteProfile']);
         Route::post('refresh', [AuthController::class, 'refresh']);
         Route::post('edit-profile', [AuthController::class, 'editProfile']);
         Route::post('change-password', [AuthController::class, 'changePassword']);
@@ -38,7 +39,10 @@ Route::group(['middleware' => 'api'], function ($router) {
         // user routes
         Route::middleware('user')->as('user')->group(function () {
             Route::resource('faqs', FAQController::class);
+            Route::resource('watch-history', WatchHistoryController::class);
             Route::resource('videos', VideoController::class);
+            Route::get('pause-play-watch-history', [WatchHistoryController::class, 'pausePlayWatchHistory']);
+            Route::delete('bulk-delete-watch-history', [WatchHistoryController::class, 'bulkDeleteWatchHistory']);
             Route::post('videos/bulk-delete', [VideoController::class, 'bulkDelete']);
             Route::post('videos/change-visibility/{id}', [VideoController::class, 'changeVisibility']);
             Route::post('send-message', [SettingController::class, 'sendMessage']);

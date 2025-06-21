@@ -25,6 +25,7 @@ return new class extends Migration
             $table->string('city');
             $table->json('tags');
             $table->boolean('is_promoted')->default(false);
+            $table->unsignedBigInteger('views')->default(0);
             $table->enum('visibility', ['Everyone', 'Only me'])->default('Everyone');
             $table->timestamps();
         });

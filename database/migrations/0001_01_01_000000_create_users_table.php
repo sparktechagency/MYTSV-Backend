@@ -31,6 +31,7 @@ return new class extends Migration
             $table->string('facebook_id')->nullable();
             $table->string('apple_id')->nullable();
             $table->string('twitter_id')->nullable();
+            $table->boolean('pause_watch_history')->default(false);
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->rememberToken();
             $table->timestamps();
