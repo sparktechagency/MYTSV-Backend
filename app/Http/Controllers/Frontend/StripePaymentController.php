@@ -2,8 +2,10 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
+use App\Models\Transactions;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Stripe\PaymentIntent;
 use Stripe\Stripe;
@@ -45,7 +47,9 @@ class StripePaymentController extends Controller
     public function paymentSuccess(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'amount' => 'required',
+            'reason'            => 'required|string|in:Uploading video,Promoting YouTube Link,Onsite account creation',
+            'amount'            => 'required',
+            'payment_intent_id' => 'required',
         ]);
         if ($validator->fails()) {
             $firstError = collect($validator->errors()->all())->first();
@@ -54,5 +58,16 @@ class StripePaymentController extends Controller
                 'errors'  => $validator->errors(),
             ], 422);
         }
+        $payment = Transactions::create([
+            'user_id'           => Auth::user()->id,
+            'reason'            => $request->reason,
+            'amount'            => $request->amount,
+            'payment_intent_id' => $request->payment_intent_id,
+        ]);
+        return response()->json([
+            'status'  => true,
+            'message' => 'Payment information stored successfully.',
+            'data'    => $payment,
+        ], 200);
     }
 }
