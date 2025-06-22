@@ -3,7 +3,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class WatchHistory extends Model
+class LikedVideo extends Model
 {
     protected $guarded = ['id'];
     public function video()

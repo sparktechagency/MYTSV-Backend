@@ -73,6 +73,12 @@ class WatchHistoryController extends Controller
         $video->increment('views');
 
         if ($user->pause_watch_history == '0') {
+            $watchHistoryExists = WatchHistory::where('user_id', $user->id)
+                ->where('video_id', $video->id)
+                ->first();
+            if ($watchHistoryExists) {
+                $watchHistoryExists->delete();
+            }
             $watchHistory = WatchHistory::create([
                 'user_id'  => $user->id,
                 'video_id' => $video->id,

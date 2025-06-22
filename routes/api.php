@@ -10,6 +10,8 @@ use App\Http\Controllers\Backend\PromotionalBanner;
 use App\Http\Controllers\Backend\SEOController;
 use App\Http\Controllers\Backend\SettingController;
 use App\Http\Controllers\Backend\TransactionController;
+use App\Http\Controllers\Frontend\DashboardController as FrontendDashboardController;
+use App\Http\Controllers\Frontend\LikedandDislikedController;
 use App\Http\Controllers\Frontend\StripePaymentController;
 use App\Http\Controllers\Frontend\VideoController;
 use App\Http\Controllers\Frontend\WatchHistoryController;
@@ -44,8 +46,12 @@ Route::group(['middleware' => 'api'], function ($router) {
             Route::get('pause-play-watch-history', [WatchHistoryController::class, 'pausePlayWatchHistory']);
             Route::delete('bulk-delete-watch-history', [WatchHistoryController::class, 'bulkDeleteWatchHistory']);
             Route::post('videos/bulk-delete', [VideoController::class, 'bulkDelete']);
+            Route::post('add_like_dislike', [LikedandDislikedController::class, 'addLikeDislike']);
+            Route::get('like_videos', [LikedandDislikedController::class, 'getLikeVideos']);
+            Route::delete('like_videos/{id}', [LikedandDislikedController::class, 'deleteLikeVideos']);
             Route::post('videos/change-visibility/{id}', [VideoController::class, 'changeVisibility']);
             Route::post('send-message', [SettingController::class, 'sendMessage']);
+             Route::get('dashboard', FrontendDashboardController::class);
 
             Route::post('payment-intent', [StripePaymentController::class, 'paymentIntent']);
             Route::post('payment-success', [StripePaymentController::class, 'paymentSuccess']);

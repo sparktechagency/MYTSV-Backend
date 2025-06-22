@@ -19,6 +19,10 @@ class Video extends Model
     {
         return $this->belongsTo(User::class);
     }
+    public function likes()
+    {
+        return $this->hasMany(LikedVideo::class);
+    }
 
     public function getTagsAttribute($value)
     {
