@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\api\Frontend\AnalyticsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Backend\BlogController;
 use App\Http\Controllers\Backend\CategoryController;
@@ -10,12 +11,15 @@ use App\Http\Controllers\Backend\PromotionalBanner;
 use App\Http\Controllers\Backend\SEOController;
 use App\Http\Controllers\Backend\SettingController;
 use App\Http\Controllers\Backend\TransactionController;
+use App\Http\Controllers\Frontend\CommentController;
+use App\Http\Controllers\Frontend\CommentReplyController;
 use App\Http\Controllers\Frontend\DashboardController as FrontendDashboardController;
 use App\Http\Controllers\Frontend\LikedandDislikedController;
 use App\Http\Controllers\Frontend\StripePaymentController;
 use App\Http\Controllers\Frontend\VideoController;
 use App\Http\Controllers\Frontend\WatchHistoryController;
 use App\Http\Controllers\NotificationController;
+use App\Models\CommentReplyReaction;
 use Illuminate\Support\Facades\Route;
 
 Route::group(['middleware' => 'api'], function ($router) {
@@ -43,6 +47,8 @@ Route::group(['middleware' => 'api'], function ($router) {
             Route::resource('faqs', FAQController::class);
             Route::resource('watch-history', WatchHistoryController::class);
             Route::resource('videos', VideoController::class);
+            Route::resource('comments', CommentController::class);
+            Route::resource('replies', CommentReplyController::class);
             Route::get('pause-play-watch-history', [WatchHistoryController::class, 'pausePlayWatchHistory']);
             Route::delete('bulk-delete-watch-history', [WatchHistoryController::class, 'bulkDeleteWatchHistory']);
             Route::post('videos/bulk-delete', [VideoController::class, 'bulkDelete']);
@@ -51,7 +57,10 @@ Route::group(['middleware' => 'api'], function ($router) {
             Route::delete('like_videos/{id}', [LikedandDislikedController::class, 'deleteLikeVideos']);
             Route::post('videos/change-visibility/{id}', [VideoController::class, 'changeVisibility']);
             Route::post('send-message', [SettingController::class, 'sendMessage']);
-             Route::get('dashboard', FrontendDashboardController::class);
+            Route::get('dashboard', FrontendDashboardController::class);
+            Route::get('analytics', [AnalyticsController::class, 'analytics']);
+            Route::post('add-remove-comment-reaction', [CommentController::class, 'addOrRemoveCommentReaction']);
+            Route::post('add-remove-reply-reaction', [CommentReplyController::class, 'addOrRemoveReplyReaction']);
 
             Route::post('payment-intent', [StripePaymentController::class, 'paymentIntent']);
             Route::post('payment-success', [StripePaymentController::class, 'paymentSuccess']);
@@ -76,8 +85,8 @@ Route::group(['middleware' => 'api'], function ($router) {
         // common routes
         Route::middleware('admin.user')->as('common')->group(function () {
             Route::get('notifications', [NotificationController::class, 'notifications']);
-            Route::get('mark-notification/{id}', [NotificationController::class, 'singleMark']);
-            Route::get('mark-all-notification', [NotificationController::class, 'allMark']);
+            Route::post('mark-notification/{id}', [NotificationController::class, 'singleMark']);
+            Route::post('mark-all-notification', [NotificationController::class, 'allMark']);
 
             Route::get('about-us', [SettingController::class, 'getAboutUs']);
             Route::get('page', [SettingController::class, 'getPage']);

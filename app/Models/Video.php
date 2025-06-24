@@ -23,6 +23,14 @@ class Video extends Model
     {
         return $this->hasMany(LikedVideo::class);
     }
+    public function dislikes()
+    {
+        return $this->hasMany(DislikedVideo::class);
+    }
+    public function watch_histories()
+    {
+        return $this->hasMany(WatchHistory::class);
+    }
 
     public function getTagsAttribute($value)
     {
