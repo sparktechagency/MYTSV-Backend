@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Frontend;
 use App\Http\Controllers\Controller;
 use App\Models\Comment;
 use App\Models\CommentReaction;
+use App\Models\CommentReply;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -30,15 +31,27 @@ class CommentController extends Controller
         }
         $comments = Comment::with('user:id,name,avatar')->withCount('reactions')->where('video_id', $request->video_id)->latest('id')->paginate($request->per_page ?? 10);
 
+        //total comment count
+        $topLevelComments = Comment::where('video_id', $request->video_id)->count();
+        $commentIds       = Comment::where('video_id', $request->video_id)->pluck('id');
+        $replies          = CommentReply::whereIn('comment_id', $commentIds)->count();
+
+        $total = $topLevelComments + $replies;
+
         $comments->getCollection()->transform(function ($c) {
             $c->reactions_count_format = Number::abbreviate($c->reactions_count);
             $c->created_at_format      = $c->created_at->diffForHumans();
             return $c;
         });
+
+        $data = [
+            'total_comment' => $total,
+            'comments'      => $comments,
+        ];
         return response()->json([
             'status'  => true,
             'message' => 'Comments retreived successfully.',
-            'data'    => $comments,
+            'data'    => $data,
         ], 200);
     }
 

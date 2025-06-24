@@ -7,15 +7,39 @@ use App\Models\CommentReplyReaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Number;
 
 class CommentReplyController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'comment_id' => 'required|numeric|exists:comments,id',
+        ]);
+        if ($validator->fails()) {
+            $firstError = collect($validator->errors()->all())->first();
+            return response()->json([
+                'message' => $firstError,
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        $replies = CommentReply::with('user:id,name,avatar')->withCount('reactions')->where('comment_id', $request->comment_id)->latest('id')->get();
+
+        $replies = $replies->map(function ($c) {
+            $c->reactions_count_format = Number::abbreviate($c->reactions_count);
+            $c->created_at_format      = $c->created_at->diffForHumans();
+            return $c;
+        });
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Comments reply retreived successfully.',
+            'data'    => $replies,
+        ], 200);
     }
 
     /**
