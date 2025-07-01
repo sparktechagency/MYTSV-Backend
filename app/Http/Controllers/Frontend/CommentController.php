@@ -29,8 +29,14 @@ class CommentController extends Controller
                 'errors'  => $validator->errors(),
             ], 422);
         }
-        $comments = Comment::with('user:id,name,avatar')->withCount('reactions')->where('video_id', $request->video_id)->latest('id')->paginate($request->per_page ?? 10);
-
+        $comments = Comment::with('user:id,name,avatar')
+            ->withCount('reactions')
+            ->with(['reactions' => function ($query) {
+                $query->where('user_id', Auth::id());
+            }])
+            ->where('video_id', $request->video_id)
+            ->latest('id')
+            ->paginate($request->per_page ?? 10);
         //total comment count
         $topLevelComments = Comment::where('video_id', $request->video_id)->count();
         $commentIds       = Comment::where('video_id', $request->video_id)->pluck('id');
@@ -41,6 +47,8 @@ class CommentController extends Controller
         $comments->getCollection()->transform(function ($c) {
             $c->reactions_count_format = Number::abbreviate($c->reactions_count);
             $c->created_at_format      = $c->created_at->diffForHumans();
+            $c->is_react               = $c->reactions->isNotEmpty();
+            unset($c->reactions);
             return $c;
         });
 

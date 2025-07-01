@@ -19,7 +19,6 @@ use App\Http\Controllers\Frontend\StripePaymentController;
 use App\Http\Controllers\Frontend\VideoController;
 use App\Http\Controllers\Frontend\WatchHistoryController;
 use App\Http\Controllers\NotificationController;
-use App\Models\CommentReplyReaction;
 use Illuminate\Support\Facades\Route;
 
 Route::group(['middleware' => 'api'], function ($router) {
@@ -46,7 +45,7 @@ Route::group(['middleware' => 'api'], function ($router) {
         Route::middleware('user')->as('user')->group(function () {
             Route::resource('faqs', FAQController::class);
             Route::resource('watch-history', WatchHistoryController::class);
-            Route::resource('videos', VideoController::class);
+            Route::resource('videos', VideoController::class)->except('show');
             Route::resource('comments', CommentController::class);
             Route::resource('replies', CommentReplyController::class);
             Route::get('pause-play-watch-history', [WatchHistoryController::class, 'pausePlayWatchHistory']);
@@ -58,6 +57,7 @@ Route::group(['middleware' => 'api'], function ($router) {
             Route::post('videos/change-visibility/{id}', [VideoController::class, 'changeVisibility']);
             Route::post('send-message', [SettingController::class, 'sendMessage']);
             Route::get('dashboard', FrontendDashboardController::class);
+            Route::get('video-analytics/{id}', [VideoController::class, 'videoAnalytics']);
             Route::get('analytics', [AnalyticsController::class, 'analytics']);
             Route::post('add-remove-comment-reaction', [CommentController::class, 'addOrRemoveCommentReaction']);
             Route::post('add-remove-reply-reaction', [CommentReplyController::class, 'addOrRemoveReplyReaction']);
@@ -91,7 +91,7 @@ Route::group(['middleware' => 'api'], function ($router) {
             Route::get('about-us', [SettingController::class, 'getAboutUs']);
             Route::get('page', [SettingController::class, 'getPage']);
             Route::get('contact', [SettingController::class, 'getContact']);
-
+            Route::resource('videos', VideoController::class)->only('show');
         });
     });
 
@@ -102,3 +102,5 @@ Route::group(['middleware' => 'api'], function ($router) {
     Route::get('get-seo', [SEOController::class, 'getSeo']);
     Route::resource('banners', PromotionalBanner::class)->only('index');
 });
+
+

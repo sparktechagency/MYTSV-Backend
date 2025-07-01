@@ -27,11 +27,15 @@ class CommentReplyController extends Controller
             ], 422);
         }
 
-        $replies = CommentReply::with('user:id,name,avatar')->withCount('reactions')->where('comment_id', $request->comment_id)->latest('id')->get();
+        $replies = CommentReply::with('user:id,name,avatar')->withCount('reactions')->with(['reactions' => function ($query) {
+            $query->where('user_id', Auth::id());
+        }])->where('comment_id', $request->comment_id)->latest('id')->get();
 
         $replies = $replies->map(function ($c) {
             $c->reactions_count_format = Number::abbreviate($c->reactions_count);
             $c->created_at_format      = $c->created_at->diffForHumans();
+            $c->is_react               = $c->reactions->isNotEmpty();
+            unset($c->reactions);
             return $c;
         });
 

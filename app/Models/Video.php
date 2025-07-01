@@ -19,6 +19,11 @@ class Video extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
     public function likes()
     {
         return $this->hasMany(LikedVideo::class);
@@ -30,6 +35,14 @@ class Video extends Model
     public function watch_histories()
     {
         return $this->hasMany(WatchHistory::class);
+    }
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
+    public function commentReplies()
+    {
+        return $this->hasManyThrough(CommentReply::class, Comment::class);
     }
 
     public function getTagsAttribute($value)
