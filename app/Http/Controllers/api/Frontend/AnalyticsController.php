@@ -2,10 +2,13 @@
 namespace App\Http\Controllers\api\Frontend;
 
 use App\Http\Controllers\Controller;
+use App\Models\DislikedVideo;
 use App\Models\LikedVideo;
+use App\Models\Video;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class AnalyticsController extends Controller
@@ -23,100 +26,97 @@ class AnalyticsController extends Controller
                 'errors'  => $validator->errors(),
             ], 422);
         }
+        $videoIds = Video::where('user_id', Auth::id())->pluck('id');
+        $now      = Carbon::now();
         if ($request->type === 'monthly') {
-            $now         = Carbon::now();
             $daysInMonth = $now->daysInMonth;
-
-            // $counts = DB::table('watch_histories')
-            //     ->where('video_id', $id)
-            //     ->select(DB::raw('DAY(created_at) as day'), DB::raw('COUNT(*) as total_watch'))
-            //     ->whereMonth('created_at', $now->month)
-            //     ->whereYear('created_at', $now->year)
-            //     ->groupBy(DB::raw('DAY(created_at)'))
-            //     ->pluck('total_watch', 'day');
-
-            // $views_analytics = collect(range(1, $daysInMonth))->map(function ($day) use ($counts) {
-            //     return [
-            //         'day'         => $day,
-            //         'total_watch' => $counts->get($day, 0),
-            //     ];
-            // });
-            // $total_watch_count = $counts->sum();
-
-            return $total_like_count = LikedVideo::whereHas('video', function ($q) use ($now) {
-                $q->where('user_id', Auth::id());
-            })
+            $counts      = DB::table('watch_histories')
+                ->whereIn('video_id', $videoIds)
                 ->whereMonth('created_at', $now->month)
                 ->whereYear('created_at', $now->year)
+                ->select(DB::raw('DAY(created_at) as day'), DB::raw('COUNT(*) as total_watch'))
+                ->groupBy(DB::raw('DAY(created_at)'))
+                ->pluck('total_watch', 'day');
+
+            $views_analytics = collect(range(1, $daysInMonth))->map(function ($day) use ($counts) {
+                return [
+                    'day'         => $day,
+                    'total_watch' => $counts->get($day, 0),
+                ];
+            });
+
+            $total_watch_count = $counts->sum();
+
+            $total_like_count = LikedVideo::whereIn('video_id', $videoIds)
+                ->whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year)
                 ->count();
-
-            // $total_dislike_count = DislikedVideo::where('video_id', $id)->whereMonth('created_at', $now->month)
-            //     ->whereYear('created_at', $now->year)->count();
-            $message = 'Video analytics retrieved successfully for ' . now()->format('F') . ' ' . now()->format('Y') . '.';
+            $total_dislike_count = DislikedVideo::whereIn('video_id', $videoIds)
+                ->whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year)
+                ->count();
+            $message = 'Analytics retrieved successfully for ' . now()->format('F') . ' ' . now()->format('Y') . '.';
         }
-        // if ($request->type === 'yearly') {
-        //     $now = Carbon::now();
+        if ($request->type === 'yearly') {
+            $counts = DB::table('watch_histories')
+                ->whereIn('video_id', $videoIds)
+                ->select(DB::raw('MONTH(created_at) as month'), DB::raw('COUNT(*) as total_watch'))
+                ->whereYear('created_at', $now->year)
+                ->groupBy(DB::raw('MONTH(created_at)'))
+                ->pluck('total_watch', 'month');
 
-        //     // Monthly watch count
-        //     $counts = DB::table('watch_histories')
-        //         ->where('video_id', $id)
-        //         ->select(DB::raw('MONTH(created_at) as month'), DB::raw('COUNT(*) as total_watch'))
-        //         ->whereYear('created_at', $now->year)
-        //         ->groupBy(DB::raw('MONTH(created_at)'))
-        //         ->pluck('total_watch', 'month');
+            $views_analytics = collect(range(1, 12))->map(function ($month) use ($counts) {
+                return [
+                    'month'       => Carbon::create()->month($month)->format('M'),
+                    'total_watch' => $counts->get($month, 0),
+                ];
+            });
+            $total_watch_count = $counts->sum();
+            $total_like_count  = LikedVideo::whereIn('video_id', $videoIds)
+                ->whereYear('created_at', now()->year)
+                ->count();
+            $total_dislike_count = DislikedVideo::whereIn('video_id', $videoIds)
+                ->whereYear('created_at', now()->year)
+                ->count();
+            $message = 'Analytics retrieved successfully for ' . now()->format('Y') . '.';
+        }
+        if ($request->type === 'custom') {
+            $month       = Carbon::createFromFormat('M', $request->month)->month;
+            $year        = $request->year ?? now()->year;
+            $date        = Carbon::createFromDate($year, $month, 1);
+            $daysInMonth = $date->daysInMonth;
 
-        //     // Prepare analytics for 12 months
-        //     $views_analytics = collect(range(1, 12))->map(function ($month) use ($counts) {
-        //         return [
-        //             'month'       => Carbon::create()->month($month)->format('M'),
-        //             'total_watch' => $counts->get($month, 0),
-        //         ];
-        //     });
+            $counts = DB::table('watch_histories')
+                ->whereIn('video_id', $videoIds)
+                ->select(DB::raw('DAY(created_at) as day'), DB::raw('COUNT(*) as total_watch'))
+                ->whereMonth('created_at', $month)
+                ->whereYear('created_at', $year)
+                ->groupBy(DB::raw('DAY(created_at)'))
+                ->pluck('total_watch', 'day');
 
-        //     $total_watch_count = $counts->sum();
-        //     $total_like_count  = LikedVideo::where('video_id', $id)
-        //         ->whereYear('created_at', $now->year)
-        //         ->count();
+            $views_analytics = collect(range(1, $daysInMonth))->map(function ($day) use ($counts) {
+                return [
+                    'day'         => $day,
+                    'total_watch' => $counts->get($day, 0),
+                ];
+            });
 
-        //     $total_dislike_count = DislikedVideo::where('video_id', $id)
-        //         ->whereYear('created_at', $now->year)
-        //         ->count();
-        //     $message = 'Video analytics retrieved successfully for ' . now()->format('Y') . '.';
-        // }
-        // if ($request->type === 'custom') {
-        //     $month = Carbon::createFromFormat('M', $request->month)->month;
-        //     $year  = $request->year ?? now()->year;
+            $total_watch_count = $counts->sum();
 
-        //     $date = Carbon::createFromDate($year, $month, 1);
+            $total_like_count = LikedVideo::whereIn('video_id', $videoIds)
+                ->whereMonth('created_at', $month)
+                ->whereYear('created_at', $year)->count();
 
-        //     $daysInMonth = $date->daysInMonth;
-        //     $counts      = DB::table('watch_histories')
-        //         ->where('video_id', $id)
-        //         ->select(DB::raw('DAY(created_at) as day'), DB::raw('COUNT(*) as total_watch'))
-        //         ->whereMonth('created_at', $month)
-        //         ->whereYear('created_at', $year)
-        //         ->groupBy(DB::raw('DAY(created_at)'))
-        //         ->pluck('total_watch', 'day');
-
-        //     $views_analytics = collect(range(1, $daysInMonth))->map(function ($day) use ($counts) {
-        //         return [
-        //             'day'         => $day,
-        //             'total_watch' => $counts->get($day, 0),
-        //         ];
-        //     });
-
-        //     $total_watch_count = $counts->sum();
-        //     $total_like_count  = LikedVideo::where('video_id', $id)->whereMonth('created_at', $month)
-        //         ->whereYear('created_at', $year)->count();
-        //     $total_dislike_count = DislikedVideo::where('video_id', $id)->whereMonth('created_at', $month)
-        //         ->whereYear('created_at', $year)->count();
-        //     $message = 'Video analytics retrieved successfully for ' . $request->month . ' ' . $year . '.';
-        // }
+            $total_dislike_count = DislikedVideo::whereIn('video_id', $videoIds)
+                ->whereMonth('created_at', $month)
+                ->whereYear('created_at', $year)->count();
+            $message = 'Analytics retrieved successfully for ' . $request->month . ' ' . $year . '.';
+        }
         $data = [
-            // 'total_views'    => $total_watch_count,
-            // 'total_likes'    => $total_like_count,
-            // 'total_dislikes' => $total_dislike_count,
-            // 'analytics'      => $views_analytics,
+            'total_views'    => $total_watch_count,
+            'total_likes'    => $total_like_count,
+            'total_dislikes' => $total_dislike_count,
+            'analytics'      => $views_analytics,
         ];
         return response()->json([
             'status'  => true,
