@@ -15,6 +15,7 @@ use App\Http\Controllers\Frontend\CommentController;
 use App\Http\Controllers\Frontend\CommentReplyController;
 use App\Http\Controllers\Frontend\DashboardController as FrontendDashboardController;
 use App\Http\Controllers\Frontend\LikedandDislikedController;
+use App\Http\Controllers\Frontend\ReportController;
 use App\Http\Controllers\Frontend\StripePaymentController;
 use App\Http\Controllers\Frontend\VideoController;
 use App\Http\Controllers\Frontend\WatchHistoryController;
@@ -58,9 +59,11 @@ Route::group(['middleware' => 'api'], function ($router) {
             Route::post('send-message', [SettingController::class, 'sendMessage']);
             Route::get('dashboard', FrontendDashboardController::class);
             Route::get('video-analytics/{id}', [VideoController::class, 'videoAnalytics']);
-            Route::get('analytics', [AnalyticsController::class, 'analytics']);
+            Route::get('analytics', [AnalyticsController::class, 'anal00ytics']);
             Route::post('add-remove-comment-reaction', [CommentController::class, 'addOrRemoveCommentReaction']);
             Route::post('add-remove-reply-reaction', [CommentReplyController::class, 'addOrRemoveReplyReaction']);
+            Route::post('add-report', [ReportController::class, 'addReport']);
+            Route::get('get-reports', [ReportController::class, 'getReport']);
 
             Route::post('payment-intent', [StripePaymentController::class, 'paymentIntent']);
             Route::post('payment-success', [StripePaymentController::class, 'paymentSuccess']);
@@ -75,6 +78,9 @@ Route::group(['middleware' => 'api'], function ($router) {
             Route::post('update-seo', [SEOController::class, 'updateSeo']);
             Route::get('transactions', [TransactionController::class, 'transactions']);
             Route::get('dashboard', DashboardController::class);
+            Route::get('get-reports', [ReportController::class, 'getAdminReport']);
+            Route::post('take-report-action/{id}', [ReportController::class, 'takeReportAction']);
+            Route::delete('report-delete/{id}', [ReportController::class, 'reportDelete']);
 
             Route::resource('categories', CategoryController::class)->except('index', 'show');
             Route::resource('faqs', FAQController::class);
@@ -92,6 +98,7 @@ Route::group(['middleware' => 'api'], function ($router) {
             Route::get('page', [SettingController::class, 'getPage']);
             Route::get('contact', [SettingController::class, 'getContact']);
             Route::resource('videos', VideoController::class)->only('show');
+            Route::get('get-report-detail/{id}', [ReportController::class, 'getReportDetail']);
         });
     });
 
@@ -102,5 +109,3 @@ Route::group(['middleware' => 'api'], function ($router) {
     Route::get('get-seo', [SEOController::class, 'getSeo']);
     Route::resource('banners', PromotionalBanner::class)->only('index');
 });
-
-
