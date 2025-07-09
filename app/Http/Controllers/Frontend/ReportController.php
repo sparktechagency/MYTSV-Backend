@@ -3,6 +3,7 @@ namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
 use App\Mail\ReportMail;
+use App\Models\Appeal;
 use App\Models\Report;
 use App\Models\User;
 use App\Models\Video;
@@ -47,6 +48,7 @@ class ReportController extends Controller
 
     public function getAdminReport(Request $request)
     {
+
         $reports = Report::with([
             'user:id,name,avatar',
             'video' => function ($query) {
@@ -66,11 +68,14 @@ class ReportController extends Controller
             });
         }
         $reports = $reports->latest('id')->paginate($request->per_page ?? 10);
-
+        $data    = [
+            'total_appeals' => Appeal::count(),
+            'reports'       => $reports,
+        ];
         return response()->json([
             'status'  => true,
             'message' => 'Report retreived successfully.',
-            'data'    => $reports,
+            'data'    => $data,
         ], 200);
     }
 
@@ -206,7 +211,7 @@ class ReportController extends Controller
 
     public function getReport(Request $request)
     {
-        $reports = Report::with('video:id,user_id,type,title,description,thumbnail,video,link,suspend_until,suspend_reason')->wherehas('video', function ($query) {
+        $reports = Report::with('video:id,user_id,type,title,description,thumbnail,video,link,suspend_until,suspend_reason')->withCount('appeal')->wherehas('video', function ($query) {
             $query->where('user_id', Auth::user()->id);
         })->whereNotNull('action_name')->whereNot('action_name', 'Give a warning')->latest('id')->paginate($request->per_page ?? 10);
         $reports->getCollection()->transform(function ($report) {

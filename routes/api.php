@@ -11,6 +11,7 @@ use App\Http\Controllers\Backend\PromotionalBanner;
 use App\Http\Controllers\Backend\SEOController;
 use App\Http\Controllers\Backend\SettingController;
 use App\Http\Controllers\Backend\TransactionController;
+use App\Http\Controllers\Frontend\AppealController;
 use App\Http\Controllers\Frontend\CommentController;
 use App\Http\Controllers\Frontend\CommentReplyController;
 use App\Http\Controllers\Frontend\DashboardController as FrontendDashboardController;
@@ -64,6 +65,7 @@ Route::group(['middleware' => 'api'], function ($router) {
             Route::post('add-remove-reply-reaction', [CommentReplyController::class, 'addOrRemoveReplyReaction']);
             Route::post('add-report', [ReportController::class, 'addReport']);
             Route::get('get-reports', [ReportController::class, 'getReport']);
+            Route::post('add-appeal', [AppealController::class, 'addAppeal']);
 
             Route::post('payment-intent', [StripePaymentController::class, 'paymentIntent']);
             Route::post('payment-success', [StripePaymentController::class, 'paymentSuccess']);
@@ -79,8 +81,12 @@ Route::group(['middleware' => 'api'], function ($router) {
             Route::get('transactions', [TransactionController::class, 'transactions']);
             Route::get('dashboard', DashboardController::class);
             Route::get('get-reports', [ReportController::class, 'getAdminReport']);
+            Route::get('get-appeals', [AppealController::class, 'getAdminAppeal']);
+            Route::get('get-appeal-details/{id}', [AppealController::class, 'getAppealDetails']);
+            Route::post('take-appeal-action/{id}', [AppealController::class, 'takeAppealAction']);
             Route::post('take-report-action/{id}', [ReportController::class, 'takeReportAction']);
             Route::delete('report-delete/{id}', [ReportController::class, 'reportDelete']);
+            Route::delete('appeal-delete/{id}', [AppealController::class, 'appealDelete']);
 
             Route::resource('categories', CategoryController::class)->except('index', 'show');
             Route::resource('faqs', FAQController::class);

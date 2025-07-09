@@ -14,4 +14,7 @@ public function user(){
 public function video(){
     return $this->belongsTo(Video::class);
 }
+public function appeal(){
+    return $this->hasOne(Appeal::class);
+}
 }
