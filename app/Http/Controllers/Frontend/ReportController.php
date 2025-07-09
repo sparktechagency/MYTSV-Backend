@@ -7,6 +7,7 @@ use App\Models\Appeal;
 use App\Models\Report;
 use App\Models\User;
 use App\Models\Video;
+use App\Notifications\NewReportNotification;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
@@ -39,6 +40,11 @@ class ReportController extends Controller
             'reason'   => $request->reason,
             'issue'    => $request->issue,
         ]);
+        // notification send
+        $admin = User::find(1);
+        if ($admin) {
+            $admin->notify(new NewReportNotification($report->id));
+        }
         return response()->json([
             'status'  => true,
             'message' => 'Report created successfully.',

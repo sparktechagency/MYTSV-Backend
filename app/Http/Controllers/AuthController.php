@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Mail\OtpMail;
 use App\Models\User;
 use App\Models\Video;
+use App\Notifications\NewRegistrationNotification;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -91,6 +92,33 @@ class AuthController extends Controller
                 'avatar' => $final_name,
             ]);
         }
+        // notification send
+        if ($user) {
+            $admin                = User::where('id', 1)->first();
+            $existingNotification = $admin->unreadNotifications()
+                ->where('type', NewRegistrationNotification::class)
+                ->first();
+            if ($existingNotification) {
+                $data = $existingNotification->data;
+
+                $data['count'] += 1;
+
+                if ($data['count'] > 9) {
+                    $data['title'] = "9+ new users registered.";
+                } else {
+                    $data['title'] = "{$data['count']} new users registered.";
+                }
+
+                $existingNotification->update([
+                    'data' => $data,
+                ]);
+            } else {
+                $count   = 1;
+                $message = "{$count} new user registered.";
+
+                $admin->notify(new NewRegistrationNotification($count, $message));
+            }
+        }
         $token   = JWTAuth::fromUser($user);
         $success = $this->respondWithToken($token, $user);
         return response()->json([
@@ -134,6 +162,30 @@ class AuthController extends Controller
             'otp_expires_at' => $otp_expires_at,
             'status'         => 'inactive',
         ]);
+        $admin                = User::where('id', 1)->first();
+        $existingNotification = $admin->unreadNotifications()
+            ->where('type', NewRegistrationNotification::class)
+            ->first();
+        if ($existingNotification) {
+            $data = $existingNotification->data;
+
+            $data['count'] += 1;
+
+            if ($data['count'] > 9) {
+                $data['title'] = "9+ new users registered.";
+            } else {
+                $data['title'] = "{$data['count']} new users registered.";
+            }
+
+            $existingNotification->update([
+                'data' => $data,
+            ]);
+        } else {
+            $count   = 1;
+            $message = "{$count} new user registered.";
+
+            $admin->notify(new NewRegistrationNotification($count, $message));
+        }
         Mail::to($request->email)->send(new OtpMail($otp));
         return response()->json([
             'status'  => true,

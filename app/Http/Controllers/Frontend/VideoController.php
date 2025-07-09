@@ -1,16 +1,18 @@
 <?php
 namespace App\Http\Controllers\Frontend;
 
-use App\Http\Controllers\Controller;
-use App\Models\DislikedVideo;
-use App\Models\LikedVideo;
-use App\Models\Video;
-use Carbon\Carbon;
+use App\Notifications\VideoPublishNotification;
 use Exception;
+use Carbon\Carbon;
+use App\Models\User;
+use App\Models\Video;
+use App\Models\LikedVideo;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use App\Models\DislikedVideo;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class VideoController extends Controller
@@ -101,6 +103,31 @@ class VideoController extends Controller
         $video->is_promoted = $request->is_promoted;
         $video->visibility  = $request->visibility;
         $video->save();
+         // notification send
+            $admin                = User::findOrFail( 1);
+            $existingNotification = $admin->unreadNotifications()
+                ->where('type', VideoPublishNotification::class)
+                ->first();
+            if ($existingNotification) {
+                $data = $existingNotification->data;
+
+                $data['count'] += 1;
+
+                if ($data['count'] > 9) {
+                    $data['title'] = "9+ new video published.";
+                } else {
+                    $data['title'] = "{$data['count']} new video published.";
+                }
+
+                $existingNotification->update([
+                    'data' => $data,
+                ]);
+            } else {
+                $count   = 1;
+                $message = "{$count} new video published.";
+
+                $admin->notify(new VideoPublishNotification($count, $message));
+            }
         return response()->json([
             'status'  => true,
             'message' => 'Video created successfully.',
