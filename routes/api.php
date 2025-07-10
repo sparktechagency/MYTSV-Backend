@@ -4,6 +4,7 @@ use App\Http\Controllers\api\Frontend\AnalyticsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Backend\BlogController;
 use App\Http\Controllers\Backend\CategoryController;
+use App\Http\Controllers\Backend\ChannelController;
 use App\Http\Controllers\Backend\DashboardController;
 use App\Http\Controllers\Backend\FAQController;
 use App\Http\Controllers\Backend\PricingController;
@@ -38,7 +39,6 @@ Route::group(['middleware' => 'api'], function ($router) {
 
     Route::middleware(['auth:api', 'verified.user'])->prefix('/')->group(function () {
         Route::get('profile', [AuthController::class, 'profile']);
-        Route::get('delete-profile', [AuthController::class, 'deleteProfile']);
         Route::post('refresh', [AuthController::class, 'refresh']);
         Route::post('edit-profile', [AuthController::class, 'editProfile']);
         Route::post('change-password', [AuthController::class, 'changePassword']);
@@ -93,6 +93,10 @@ Route::group(['middleware' => 'api'], function ($router) {
             Route::resource('faqs', FAQController::class);
             Route::resource('blogs', BlogController::class);
             Route::resource('banners', PromotionalBanner::class)->except('index');
+
+
+            Route::get('get-channels', [ChannelController::class, 'getChannels']);
+            Route::delete('delete-channel/{id}', [ChannelController::class, 'deleteChannel']);
         });
 
         // common routes
@@ -105,6 +109,7 @@ Route::group(['middleware' => 'api'], function ($router) {
             Route::get('page', [SettingController::class, 'getPage']);
             Route::get('contact', [SettingController::class, 'getContact']);
             Route::get('get-report-detail/{id}', [ReportController::class, 'getReportDetail']);
+
         });
     });
 
