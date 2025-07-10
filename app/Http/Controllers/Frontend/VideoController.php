@@ -1,7 +1,6 @@
 <?php
 namespace App\Http\Controllers\Frontend;
 
-use App\Notifications\VideoPublishNotification;
 use Exception;
 use Carbon\Carbon;
 use App\Models\User;
@@ -9,11 +8,13 @@ use App\Models\Video;
 use App\Models\LikedVideo;
 use Illuminate\Http\Request;
 use App\Models\DislikedVideo;
+use Illuminate\Support\Number;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use App\Notifications\VideoPublishNotification;
 
 class VideoController extends Controller
 {
@@ -141,7 +142,12 @@ class VideoController extends Controller
     public function show(string $id)
     {
         try {
-            $video               = Video::with('category')->withCount(['likes', 'dislikes', 'commentReplies'])->findOrFail($id);
+            $video               = Video::with('category','user:id,name,channel_name,avatar')->withCount(['likes', 'dislikes', 'commentReplies'])->findOrFail($id);
+               $video->views_count_formated       = Number::abbreviate($video->views);
+               $video->likes_count_formated       = Number::abbreviate($video->likes_count);
+               $video->dislikes_count_formated       = Number::abbreviate($video->dislikes_count);
+               $video->comment_replies_count_formated       = Number::abbreviate($video->comment_replies_count);
+               $video->publish_time_formated       = $video->created_at->diffForHumans();
             $video->publish_date = $video->created_at->format('d-m-Y');
             $video->publish_time = $video->created_at->format('H:i A');
             return response()->json([

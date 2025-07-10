@@ -15,6 +15,7 @@ use App\Http\Controllers\Frontend\AppealController;
 use App\Http\Controllers\Frontend\CommentController;
 use App\Http\Controllers\Frontend\CommentReplyController;
 use App\Http\Controllers\Frontend\DashboardController as FrontendDashboardController;
+use App\Http\Controllers\Frontend\HomeController;
 use App\Http\Controllers\Frontend\LikedandDislikedController;
 use App\Http\Controllers\Frontend\ReportController;
 use App\Http\Controllers\Frontend\StripePaymentController;
@@ -103,15 +104,17 @@ Route::group(['middleware' => 'api'], function ($router) {
             Route::get('about-us', [SettingController::class, 'getAboutUs']);
             Route::get('page', [SettingController::class, 'getPage']);
             Route::get('contact', [SettingController::class, 'getContact']);
-            Route::resource('videos', VideoController::class)->only('show');
             Route::get('get-report-detail/{id}', [ReportController::class, 'getReportDetail']);
         });
     });
 
     // token free routes
     Route::resource('categories', CategoryController::class)->only('index');
+    Route::resource('videos', VideoController::class)->only('show');
     Route::resource('blogs', BlogController::class)->only('index', 'show');
     Route::get('get-price', [PricingController::class, 'getPrice']);
     Route::get('get-seo', [SEOController::class, 'getSeo']);
     Route::resource('banners', PromotionalBanner::class)->only('index');
+    Route::get('get-promotional-video', [HomeController::class, 'getPromotionalVideo']);
+    Route::get('get-related-video/{id}', [HomeController::class, 'getRelatedVideo']);
 });
