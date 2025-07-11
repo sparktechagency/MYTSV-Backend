@@ -96,6 +96,7 @@ Route::group(['middleware' => 'api'], function ($router) {
 
 
             Route::get('get-channels', [ChannelController::class, 'getChannels']);
+            Route::get('channel-details/{id}', [ChannelController::class, 'getChannelDetails']);
             Route::delete('delete-channel/{id}', [ChannelController::class, 'deleteChannel']);
         });
 

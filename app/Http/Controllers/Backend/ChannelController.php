@@ -105,5 +105,22 @@ class ChannelController extends Controller
         }
 
     }
-
+    public function getChannelDetails($id)
+    {
+        $channel  = User::where('id', $id)->select('id', 'channel_name', 'email', 'cover_image', 'avatar', 'bio', 'contact', 'locations', 'services')->first();
+        $videoIds = Video::where('user_id', $id)->pluck('id');
+        $videos=Video::where('user_id',$id)->latest('id')->get();
+        $data     = [
+            'channel' => $channel,
+            'total_views'   => Video::where('user_id', $id)->sum('views'),
+            'total_videos'  => Video::where('user_id', $id)->count(),
+            'total_likes'   => LikedVideo::whereIn('video_id', $videoIds)->count(),
+            'videos'=>$videos,
+        ];
+        return response()->json([
+            'status'  => true,
+            'message' => 'Channel detail retrieved successfully.',
+            'data'    => $data,
+        ], 200);
+    }
 }
