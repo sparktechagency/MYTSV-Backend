@@ -141,6 +141,7 @@ class VideoController extends Controller
      */
     public function show(string $id)
     {
+        
         try {
             $video               = Video::with('category','user:id,name,channel_name,avatar')->withCount(['likes', 'dislikes', 'commentReplies'])->findOrFail($id);
                $video->views_count_formated       = Number::abbreviate($video->views);

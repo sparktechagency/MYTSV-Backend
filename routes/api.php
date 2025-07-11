@@ -94,7 +94,6 @@ Route::group(['middleware' => 'api'], function ($router) {
             Route::resource('blogs', BlogController::class);
             Route::resource('banners', PromotionalBanner::class)->except('index');
 
-
             Route::get('get-channels', [ChannelController::class, 'getChannels']);
             Route::get('channel-details/{id}', [ChannelController::class, 'getChannelDetails']);
             Route::delete('delete-channel/{id}', [ChannelController::class, 'deleteChannel']);
@@ -123,4 +122,6 @@ Route::group(['middleware' => 'api'], function ($router) {
     Route::resource('banners', PromotionalBanner::class)->only('index');
     Route::get('get-promotional-video', [HomeController::class, 'getPromotionalVideo']);
     Route::get('get-related-video/{id}', [HomeController::class, 'getRelatedVideo']);
+    Route::get('search-video', [HomeController::class, 'searchVideo']);
+    Route::get('home-video', [HomeController::class, 'homeVideo']);
 });
