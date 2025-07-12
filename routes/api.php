@@ -9,6 +9,7 @@ use App\Http\Controllers\Backend\DashboardController;
 use App\Http\Controllers\Backend\FAQController;
 use App\Http\Controllers\Backend\PricingController;
 use App\Http\Controllers\Backend\PromotionalBanner;
+use App\Http\Controllers\Backend\SalesRepresentativeController;
 use App\Http\Controllers\Backend\SEOController;
 use App\Http\Controllers\Backend\SettingController;
 use App\Http\Controllers\Backend\TransactionController;
@@ -93,6 +94,7 @@ Route::group(['middleware' => 'api'], function ($router) {
             Route::resource('faqs', FAQController::class);
             Route::resource('blogs', BlogController::class);
             Route::resource('banners', PromotionalBanner::class)->except('index');
+            Route::resource('sales-representatives', SalesRepresentativeController::class);
 
             Route::get('get-channels', [ChannelController::class, 'getChannels']);
             Route::get('channel-details/{id}', [ChannelController::class, 'getChannelDetails']);

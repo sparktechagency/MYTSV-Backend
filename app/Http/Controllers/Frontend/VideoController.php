@@ -1,20 +1,20 @@
 <?php
 namespace App\Http\Controllers\Frontend;
 
-use Exception;
-use Carbon\Carbon;
+use App\Http\Controllers\Controller;
+use App\Models\DislikedVideo;
+use App\Models\LikedVideo;
 use App\Models\User;
 use App\Models\Video;
-use App\Models\LikedVideo;
+use App\Notifications\VideoPublishNotification;
+use Carbon\Carbon;
+use Exception;
 use Illuminate\Http\Request;
-use App\Models\DislikedVideo;
-use Illuminate\Support\Number;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
-use App\Notifications\VideoPublishNotification;
+use Illuminate\Support\Number;
 
 class VideoController extends Controller
 {
@@ -104,31 +104,31 @@ class VideoController extends Controller
         $video->is_promoted = $request->is_promoted;
         $video->visibility  = $request->visibility;
         $video->save();
-         // notification send
-            $admin                = User::findOrFail( 1);
-            $existingNotification = $admin->unreadNotifications()
-                ->where('type', VideoPublishNotification::class)
-                ->first();
-            if ($existingNotification) {
-                $data = $existingNotification->data;
+        // notification send
+        $admin                = User::findOrFail(1);
+        $existingNotification = $admin->unreadNotifications()
+            ->where('type', VideoPublishNotification::class)
+            ->first();
+        if ($existingNotification) {
+            $data = $existingNotification->data;
 
-                $data['count'] += 1;
+            $data['count'] += 1;
 
-                if ($data['count'] > 9) {
-                    $data['title'] = "9+ new video published.";
-                } else {
-                    $data['title'] = "{$data['count']} new video published.";
-                }
-
-                $existingNotification->update([
-                    'data' => $data,
-                ]);
+            if ($data['count'] > 9) {
+                $data['title'] = "9+ new video published.";
             } else {
-                $count   = 1;
-                $message = "{$count} new video published.";
-
-                $admin->notify(new VideoPublishNotification($count, $message));
+                $data['title'] = "{$data['count']} new video published.";
             }
+
+            $existingNotification->update([
+                'data' => $data,
+            ]);
+        } else {
+            $count   = 1;
+            $message = "{$count} new video published.";
+
+            $admin->notify(new VideoPublishNotification($count, $message));
+        }
         return response()->json([
             'status'  => true,
             'message' => 'Video created successfully.',
@@ -141,16 +141,24 @@ class VideoController extends Controller
      */
     public function show(string $id)
     {
-        
         try {
-            $video               = Video::with('category','user:id,name,channel_name,avatar')->withCount(['likes', 'dislikes', 'commentReplies'])->findOrFail($id);
-               $video->views_count_formated       = Number::abbreviate($video->views);
-               $video->likes_count_formated       = Number::abbreviate($video->likes_count);
-               $video->dislikes_count_formated       = Number::abbreviate($video->dislikes_count);
-               $video->comment_replies_count_formated       = Number::abbreviate($video->comment_replies_count);
-               $video->publish_time_formated       = $video->created_at->diffForHumans();
-            $video->publish_date = $video->created_at->format('d-m-Y');
-            $video->publish_time = $video->created_at->format('H:i A');
+            $video                                 = Video::with('category', 'user:id,name,channel_name,avatar')->withCount(['likes', 'dislikes', 'commentReplies'])->findOrFail($id);
+            $video->views_count_formated           = Number::abbreviate($video->views);
+            $video->likes_count_formated           = Number::abbreviate($video->likes_count);
+            $video->dislikes_count_formated        = Number::abbreviate($video->dislikes_count);
+            $video->comment_replies_count_formated = Number::abbreviate($video->comment_replies_count);
+            $video->publish_time_formated          = $video->created_at->diffForHumans();
+            $video->publish_date                   = $video->created_at->format('d-m-Y');
+            $video->publish_time                   = $video->created_at->format('H:i A');
+            // Check like/dislike status for auth user
+            if (auth()->check()) {
+                $video->is_liked    = $video->likes()->where('user_id', auth()->id())->exists();
+                $video->is_disliked = $video->dislikes()->where('user_id', auth()->id())->exists();
+            } else {
+                $video->is_liked    = false;
+                $video->is_disliked = false;
+            }
+
             return response()->json([
                 'status'  => true,
                 'message' => 'Video details retrieved successfully.',
