@@ -92,7 +92,19 @@ class SalesRepresentativeController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $sales_representative = SalesRepresentative::with('users:id,sales_representative_id,channel_name,avatar,created_at')
+            ->findOrFail($id);
+
+        foreach ($sales_representative->users as $user) {
+            $user->created_at_date_formatted = $user->created_at ? $user->created_at->format('d M Y') : null;
+            $user->created_at_time_formatted = $user->created_at ? $user->created_at->format(' h:i A') : null;
+        }
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Sales representative detail retrieved successfully.',
+            'data'    => $sales_representative,
+        ], 200);
     }
 
     /**
@@ -118,6 +130,16 @@ class SalesRepresentativeController extends Controller
     {
         try {
             $sales_representative = SalesRepresentative::findOrFail($id);
+            if ($sales_representative) {
+                $has_user = $sales_representative->users()->count();
+                if ($has_user) {
+                    return response()->json([
+                        'status'  => false,
+                        'message' => 'You cannot delete this sales representative. There are related users.',
+                        'data'    => null,
+                    ], 200);
+                }
+            }
             if ($sales_representative) {
                 $photo_location     = public_path('uploads/representative');
                 $old_photo          = basename($sales_representative->photo);

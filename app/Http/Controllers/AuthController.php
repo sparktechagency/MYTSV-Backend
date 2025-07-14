@@ -3,8 +3,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Mail\OtpMail;
+use App\Models\SalesRepresentative;
 use App\Models\User;
-use App\Models\Video;
 use App\Notifications\NewRegistrationNotification;
 use Exception;
 use Illuminate\Http\Request;
@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -129,11 +128,13 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
+
         $validator = Validator::make($request->all(), [
-            'name'         => 'required|string|max:255',
-            'channel_name' => 'required|string|max:255',
-            'email'        => 'required|email|unique:users,email',
-            'password'     => 'required|string|min:4',
+            'name'                      => 'required|string|max:255',
+            'channel_name'              => 'required|string|max:255',
+            'email'                     => 'required|email|unique:users,email',
+            'password'                  => 'required|string|min:4|same:c_password',
+            'representative_secret_key' => 'sometimes|string|max:6',
         ]);
         if ($validator->fails()) {
             $firstError = collect($validator->errors()->all())->first();
@@ -143,6 +144,12 @@ class AuthController extends Controller
                 'errors'  => $validator->errors(),
             ], 422);
         }
+        if ($request->representative_secret_key) {
+            $sales_representative = SalesRepresentative::where('secret_key', $request->representative_secret_key)->first();
+            if (! $sales_representative) {
+                return response()->json(['status' => false, 'message' => 'Invalid representative secret key', 'data' => null], 200);
+            }
+        }
         $otp            = rand(100000, 999999);
         $otp_expires_at = now()->addMinutes(10);
         $avatarUrl      = 'https://ui-avatars.com/api/?name=' . urlencode($request->channel_name) . '&background=random&bold=true&size=256';
@@ -150,18 +157,22 @@ class AuthController extends Controller
         $filename       = time() . '.png';
         $savePath       = public_path('uploads/user/' . $filename);
         file_put_contents($savePath, $response->body());
+        $user                 = new User();
+        $user->name           = $request->name;
+        $user->channel_name   = $request->channel_name;
+        $user->email          = $request->email;
+        $user->password       = Hash::make($request->password);
+        $user->role           = 'USER';
+        $user->avatar         = $filename;
+        $user->otp            = $otp;
+        $user->otp_expires_at = $otp_expires_at;
+        $user->status         = 'inactive';
+        if ($request->representative_secret_key && $sales_representative) {
+            $user->sales_representative_id = $sales_representative->id;
+        }
 
-        $user = User::create([
-            'name'           => $request->name,
-            'channel_name'   => $request->channel_name,
-            'email'          => $request->email,
-            'password'       => Hash::make($request->password),
-            'role'           => 'USER',
-            'avatar'         => $filename,
-            'otp'            => $otp,
-            'otp_expires_at' => $otp_expires_at,
-            'status'         => 'inactive',
-        ]);
+        $user->save();
+
         $admin                = User::where('id', 1)->first();
         $existingNotification = $admin->unreadNotifications()
             ->where('type', NewRegistrationNotification::class)
@@ -494,6 +505,5 @@ class AuthController extends Controller
             'user'         => Auth::user() ?? $user,
         ];
     }
-
 
 }
