@@ -37,7 +37,7 @@ class User extends Authenticatable implements JWTSubject
     {
         return [
             'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
+            // 'password'          => 'hashed',
         ];
     }
 
@@ -53,7 +53,7 @@ class User extends Authenticatable implements JWTSubject
 
     public function getAvatarAttribute($avatar)
     {
-        return asset('uploads/user/' . $avatar);
+        return asset($avatar);
     }
     public function getCoverImageAttribute($image)
     {
@@ -66,6 +66,10 @@ class User extends Authenticatable implements JWTSubject
     public function getLocationsAttribute($value)
     {
         return json_decode($value);
+    }
+    public function getPauseWatchHistoryAttribute($value)
+    {
+        return (boolean) $value;
     }
     public function videos()
     {

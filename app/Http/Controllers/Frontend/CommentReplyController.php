@@ -27,9 +27,13 @@ class CommentReplyController extends Controller
             ], 422);
         }
 
-        $replies = CommentReply::with('user:id,name,avatar')->withCount('reactions')->with(['reactions' => function ($query) {
-            $query->where('user_id', Auth::id());
-        }])->where('comment_id', $request->comment_id)->latest('id')->get();
+        $replies = CommentReply::with('user:id,name,avatar')->withCount('reactions')->with([
+            'reactions' => function ($query) {
+                $query->where('user_id', Auth::id());
+            },
+        ])->where('comment_id', $request->comment_id)
+        ->latest('id')
+        ->get();
 
         $replies = $replies->map(function ($c) {
             $c->reactions_count_format = Number::abbreviate($c->reactions_count);
@@ -130,16 +134,30 @@ class CommentReplyController extends Controller
         if ($reply_reaction) {
             $reply_reaction->delete();
             $status = 'Comment reply reaction removed';
+            $action = 'removed';
         } else {
             $reply_reaction = CommentReplyReaction::create([
                 'user_id'          => Auth::id(),
                 'comment_reply_id' => $request->reply_id,
             ]);
             $status = 'Comment reply reaction added';
+            $action = 'added';
         }
+
+        $reactionsCount = CommentReplyReaction::where('comment_reply_id', $request->reply_id)->count();
+
+        $reactionsCountFormat = Number::abbreviate($reactionsCount);
+
+        $isReact = CommentReplyReaction::where('comment_reply_id', $request->reply_id)
+            ->where('user_id', Auth::id())
+            ->exists();
+
         return response()->json([
-            'status'  => true,
-            'message' => $status,
+            'status'                 => true,
+            'message'                => $status,
+            'action'                 => $action,
+            'reactions_count_format' => $reactionsCountFormat,
+            'is_react'               => $isReact,
         ], 200);
     }
 }

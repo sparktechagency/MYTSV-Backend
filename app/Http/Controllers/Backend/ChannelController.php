@@ -105,11 +105,16 @@ class ChannelController extends Controller
         }
 
     }
-    public function getChannelDetails($id)
+    public function getChannelDetails(Request $request, $id)
     {
-        $channel  = User::where('id', $id)->select('id', 'channel_name', 'email', 'cover_image', 'avatar', 'bio', 'contact', 'locations', 'services')->first();
+        $channel  = User::where('id', (int) $id)->select('id', 'channel_name', 'email', 'cover_image', 'avatar', 'bio', 'contact', 'locations', 'services')->first();
         $videoIds = Video::where('user_id', $id)->pluck('id');
-        $videos   = Video::where('user_id', $id)->latest('id')->get();
+        $videos   = Video::with('user:id,channel_name,avatar')->where('user_id', $id)->latest('id')->paginate($request->per_page ?? 10);
+        $videos->getCollection()->transform(function ($video) {
+            $video->views_count_formated = Number::abbreviate($video->views);
+            $video->created_at_format    = $video->created_at->diffForHumans();
+            return $video;
+        });
         $data     = [
             'channel'      => $channel,
             'total_views'  => Video::where('user_id', $id)->sum('views'),
@@ -124,3 +129,4 @@ class ChannelController extends Controller
         ], 200);
     }
 }
+   

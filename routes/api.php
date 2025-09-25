@@ -1,10 +1,12 @@
 <?php
 
+use App\Http\Controllers\Admin\SystemSettingController;
 use App\Http\Controllers\api\Frontend\AnalyticsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Backend\BlogController;
 use App\Http\Controllers\Backend\CategoryController;
 use App\Http\Controllers\Backend\ChannelController;
+use App\Http\Controllers\Backend\CityandStateController;
 use App\Http\Controllers\Backend\DashboardController;
 use App\Http\Controllers\Backend\FAQController;
 use App\Http\Controllers\Backend\PricingController;
@@ -50,9 +52,9 @@ Route::group(['middleware' => 'api'], function ($router) {
             Route::resource('faqs', FAQController::class);
             Route::resource('watch-history', WatchHistoryController::class);
             Route::resource('videos', VideoController::class)->except('show');
-            Route::resource('comments', CommentController::class);
-            Route::resource('replies', CommentReplyController::class);
-            Route::get('pause-play-watch-history', [WatchHistoryController::class, 'pausePlayWatchHistory']);
+            // Route::resource('comments', CommentController::class);
+            // Route::resource('replies', CommentReplyController::class);
+            Route::post('pause-play-watch-history', [WatchHistoryController::class, 'pausePlayWatchHistory']);
             Route::delete('bulk-delete-watch-history', [WatchHistoryController::class, 'bulkDeleteWatchHistory']);
             Route::post('videos/bulk-delete', [VideoController::class, 'bulkDelete']);
             Route::post('add_like_dislike', [LikedandDislikedController::class, 'addLikeDislike']);
@@ -62,14 +64,13 @@ Route::group(['middleware' => 'api'], function ($router) {
             Route::post('send-message', [SettingController::class, 'sendMessage']);
             Route::get('dashboard', FrontendDashboardController::class);
             Route::get('video-analytics/{id}', [VideoController::class, 'videoAnalytics']);
-            Route::get('analytics', [AnalyticsController::class, 'anal00ytics']);
+            Route::get('analytics', [AnalyticsController::class, 'analytics']);
             Route::post('add-remove-comment-reaction', [CommentController::class, 'addOrRemoveCommentReaction']);
             Route::post('add-remove-reply-reaction', [CommentReplyController::class, 'addOrRemoveReplyReaction']);
             Route::post('add-report', [ReportController::class, 'addReport']);
             Route::get('get-reports', [ReportController::class, 'getReport']);
             Route::post('add-appeal', [AppealController::class, 'addAppeal']);
 
-            Route::post('payment-intent', [StripePaymentController::class, 'paymentIntent']);
             Route::post('payment-success', [StripePaymentController::class, 'paymentSuccess']);
         });
 
@@ -80,6 +81,8 @@ Route::group(['middleware' => 'api'], function ($router) {
             Route::post('contact', [SettingController::class, 'updateContact']);
             Route::post('update-price', [PricingController::class, 'updatePrice']);
             Route::post('update-seo', [SEOController::class, 'updateSeo']);
+            Route::post('update-banner-status/{id}', [PromotionalBanner::class, 'toggleBannerStatus']);
+            Route::post('update-system-setting', [SystemSettingController::class, 'toggleSystemBannerStatus']);
             Route::get('transactions', [TransactionController::class, 'transactions']);
             Route::get('dashboard', DashboardController::class);
             Route::get('get-reports', [ReportController::class, 'getAdminReport']);
@@ -97,7 +100,7 @@ Route::group(['middleware' => 'api'], function ($router) {
             Route::resource('sales-representatives', SalesRepresentativeController::class);
 
             Route::get('get-channels', [ChannelController::class, 'getChannels']);
-            Route::get('channel-details/{id}', [ChannelController::class, 'getChannelDetails']);
+
             Route::delete('delete-channel/{id}', [ChannelController::class, 'deleteChannel']);
         });
 
@@ -107,8 +110,9 @@ Route::group(['middleware' => 'api'], function ($router) {
             Route::post('mark-notification/{id}', [NotificationController::class, 'singleMark']);
             Route::post('mark-all-notification', [NotificationController::class, 'allMark']);
 
+            Route::resource('comments', CommentController::class);
+            Route::resource('replies', CommentReplyController::class);
             Route::get('about-us', [SettingController::class, 'getAboutUs']);
-            Route::get('page', [SettingController::class, 'getPage']);
             Route::get('contact', [SettingController::class, 'getContact']);
             Route::get('get-report-detail/{id}', [ReportController::class, 'getReportDetail']);
 
@@ -116,6 +120,7 @@ Route::group(['middleware' => 'api'], function ($router) {
     });
 
     // token free routes
+    Route::get('page', [SettingController::class, 'getPage']);
     Route::resource('categories', CategoryController::class)->only('index');
     Route::resource('videos', VideoController::class)->only('show');
     Route::resource('blogs', BlogController::class)->only('index', 'show');
@@ -123,7 +128,16 @@ Route::group(['middleware' => 'api'], function ($router) {
     Route::get('get-seo', [SEOController::class, 'getSeo']);
     Route::resource('banners', PromotionalBanner::class)->only('index');
     Route::get('get-promotional-video', [HomeController::class, 'getPromotionalVideo']);
+    Route::get('promotional-video-with-limitation', [HomeController::class, 'promotionalVideoWithLimitation']);
+    Route::get('promotional-video-with-pagination', [HomeController::class, 'promotionalVideoWithPagination']);
     Route::get('get-related-video/{id}', [HomeController::class, 'getRelatedVideo']);
+    Route::get('get-promoted-related-video/{id}', [HomeController::class, 'getPromotedRelatedVideo']);
     Route::get('search-video', [HomeController::class, 'searchVideo']);
     Route::get('home-video', [HomeController::class, 'homeVideo']);
+    Route::get('all-videos', [HomeController::class, 'allVideo']);
+    Route::get('states', [CityandStateController::class, 'states']);
+    Route::get('cities/{state_id}', [CityandStateController::class, 'city']);
+    Route::get('channel-details/{id}', [ChannelController::class, 'getChannelDetails']);
+    Route::post('payment-intent', [StripePaymentController::class, 'paymentIntent']);
+    Route::get('global-search-videos', [VideoController::class, 'globalSearchVideos']);
 });

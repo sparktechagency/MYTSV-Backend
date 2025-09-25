@@ -2,6 +2,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use phpDocumentor\Reflection\Types\Boolean;
 
 class Banner extends Model
 {
@@ -10,4 +11,9 @@ class Banner extends Model
     {
         return asset('uploads/banner/' . $iamge);
     }
+public function getIsActiveAttribute($value)
+{
+    return (bool) $value;
+}
+
 }

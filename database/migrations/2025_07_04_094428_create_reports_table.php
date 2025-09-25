@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
              $table->foreignId('user_id')->constrained('users')->onDelete('cascade')->comment('user who make the report');
              $table->foreignId('video_id')->constrained('videos')->onDelete('cascade');
-             $table->string('reason');
-             $table->text('issue');
+             $table->string('reason')->nullable();
+             $table->text('issue')->nullable();
              $table->string( 'action_name')->nullable();
              $table->text('action_issue')->nullable();
             $table->timestamps();

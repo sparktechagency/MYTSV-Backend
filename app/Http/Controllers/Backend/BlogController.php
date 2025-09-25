@@ -15,7 +15,7 @@ class BlogController extends Controller
      */
     public function index(Request $request)
     {
-        $blogs = Blog::paginate($request->per_page ?? 10);
+        $blogs = Blog::latest('id')->paginate($request->per_page ?? 10);
         return response()->json([
             'status'  => true,
             'message' => 'Blog retreived successfully.',

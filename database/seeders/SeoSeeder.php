@@ -12,10 +12,10 @@ class SeoSeeder extends Seeder
     public function run(): void
     {
         Seo::create([
-            'title'       => 'Welcome to MyTSV',
-            'description' => 'Discover a world of tutorials, personal stories, tech deep-dives, and creative inspiration. Learn and grow with every post.',
+            'title'       => 'MyTSV - Business Directory',
+            'description' => 'Expanding from the Chicagoland area to a nationwide reach, we aim to simplify and enhance the way people find services and businesses in their local communities, fostering closer connections between businesses and residents.',
             'tags'        => json_encode([
-                'blog', 'personal', 'tech', 'lifestyle', 'productivity',
+                'business', 'local business', 'directory', 'explore',
             ]),
             'links'       => json_encode([
                 [

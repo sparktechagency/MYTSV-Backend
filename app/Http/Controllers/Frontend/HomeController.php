@@ -12,7 +12,7 @@ class HomeController extends Controller
 {
     public function getPromotionalVideo(Request $request)
     {
-        $promotional_videos = Video::with('user:id,channel_name,avatar')->select('id', 'user_id', 'category_id', 'thumbnail', 'title', 'is_promoted', 'states', 'city', 'views', 'created_at')->latest('id')->where('is_promoted', 1)->where('visibility', 'Everyone')->where('is_suspend', 0);
+        $promotional_videos = Video::with('user:id,channel_name,avatar')->latest('id')->where('is_promoted', 1)->where('visibility', 'Everyone')->where('is_suspend', 0);
         if ($request->category_id) {
             $promotional_videos = $promotional_videos->where('category_id', $request->category_id);
         }
@@ -22,8 +22,8 @@ class HomeController extends Controller
         $promotional_videos = $promotional_videos->paginate($request->per_page ?? 10);
 
         $promotional_videos->getCollection()->transform(function ($promotional_video) {
-            $promotional_video->views_count       = Number::abbreviate($promotional_video->views);
-            $promotional_video->created_at_format = $promotional_video->created_at->diffForHumans();
+            $promotional_video->views_count_formated = Number::abbreviate($promotional_video->views);
+            $promotional_video->created_at_format    = $promotional_video->created_at->diffForHumans();
             return $promotional_video;
         });
         return response()->json([
@@ -35,10 +35,11 @@ class HomeController extends Controller
 
     public function getRelatedVideo(Request $request, $id)
     {
-        $perPage    = $request->per_page ?? 10;
-        $categoryId = Video::findOrFail($id)->category_id;
+        $perPage = $request->per_page ?? 10;
+        // $categoryId = Video::findOrFail($id)->category_id;
+        $categoryId = $id;
         // Promoted videos
-        $promotedVideos = Video::with('user:id,channel_name')->where('category_id', $categoryId)
+        $promotedVideos = Video::with('user:id,channel_name,avatar', 'category:id,name')->where('category_id', $categoryId)
             ->where('visibility', 'Everyone')
             ->where('is_suspend', 0)
             ->where('is_promoted', 1)
@@ -48,7 +49,7 @@ class HomeController extends Controller
             ->shuffle()
             ->take(3);
         // Latest non-promoted shuffle
-        $nonPromotedVideos = Video::with('user:id,channel_name')->where('category_id', $categoryId)
+        $nonPromotedVideos = Video::with('user:id,channel_name,avatar', 'category:id,name')->where('category_id', $categoryId)
             ->where('visibility', 'Everyone')
             ->where('is_suspend', 0)
             ->where('is_promoted', 0)
@@ -60,7 +61,7 @@ class HomeController extends Controller
         $related_videos = $promotedVideos->concat($nonPromotedVideos);
         $related_videos = $related_videos->map(function ($video) {
             $video->views_count_formated = Number::abbreviate($video->views);
-            $video->created_at_formated  = $video->created_at->diffForHumans();
+            $video->created_at_format    = $video->created_at->diffForHumans();
             return $video;
         });
 
@@ -79,6 +80,45 @@ class HomeController extends Controller
             'status'  => true,
             'message' => 'Related videos retrieved successfully.',
             'data'    => $paginated,
+        ], 200);
+    }
+    public function getPromotedRelatedVideo(Request $request, $id)
+    {
+        $perPage = $request->per_page ?? 10;
+        // $categoryId = Video::findOrFail($id)->category_id;
+        $categoryId        = $id;
+        $category          = Category::findOrFail($categoryId);
+        $nonPromotedVideos = Video::with('user:id,channel_name,avatar')->where('category_id', $categoryId)
+            ->where('visibility', 'Everyone')
+            ->where('is_suspend', 0)
+            ->where('is_promoted', 1)
+            ->latest('id')
+            ->get();
+
+        $related_videos = $nonPromotedVideos->map(function ($video) {
+            $video->views_count_formated = Number::abbreviate($video->views);
+            $video->created_at_format    = $video->created_at->diffForHumans();
+            return $video;
+        });
+
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $pagedData   = $related_videos->forPage($currentPage, $perPage)->values();
+
+        $paginated = new LengthAwarePaginator(
+            $pagedData,
+            $related_videos->count(),
+            $perPage,
+            $currentPage,
+            ['path' => url()->current()]
+        );
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Related videos retrieved successfully.',
+            'data'    => [
+                'category_name' => $category->name,
+                'videos'        => $paginated,
+            ],
         ], 200);
     }
 
@@ -155,16 +195,16 @@ class HomeController extends Controller
         // Add formatted attributes with map()
         $mappedVideos = $paginator->getCollection()->map(function ($video) {
             $video->views_count_formated = Number::abbreviate($video->views);
-            $video->created_at_formated  = $video->created_at->diffForHumans();
+            $video->created_at_format    = $video->created_at->diffForHumans();
             return $video;
         });
 
         // Replace collection in paginator
         $paginator->setCollection($mappedVideos);
 
-        $data=[
-            'category_name'=>Category::where('id',$request->category_id)->first()->name ?? null,
-            'videos'=> $paginator,
+        $data = [
+            'category_name' => Category::where('id', $request->category_id)->first()->name ?? null,
+            'videos'        => $paginator,
         ];
         // Return response
         return response()->json([
@@ -177,12 +217,13 @@ class HomeController extends Controller
     public function homeVideo(Request $request)
     {
         $videoLimit = $request->video_limit ?? 6;
+        $perPage    = $request->input('per_page', 10);
 
-        $categories = Category::all();
+        // Paginate categories
+        $categories = Category::paginate($perPage);
 
-        $categories->map(function ($category) use ($videoLimit) {
-
-            // Get 1 random promoted video with eager loaded user
+        // Modify each category with videos
+        $categories->getCollection()->transform(function ($category) use ($videoLimit) {
             $promotedVideo = $category->videos()
                 ->with('user:id,channel_name,avatar')
                 ->where('is_promoted', 1)
@@ -193,7 +234,6 @@ class HomeController extends Controller
 
             $nonPromotedLimit = $promotedVideo ? ($videoLimit - 1) : $videoLimit;
 
-            // Get non-promoted videos with eager loaded user
             $nonPromotedVideos = $category->videos()
                 ->with('user:id,channel_name,avatar')
                 ->where('is_promoted', 0)
@@ -204,7 +244,6 @@ class HomeController extends Controller
                 ->get()
                 ->shuffle();
 
-            // Merge videos
             $videos = collect();
             if ($promotedVideo) {
                 $videos->push($promotedVideo);
@@ -213,7 +252,70 @@ class HomeController extends Controller
 
             $videos = $videos->map(function ($video) {
                 $video->views_count_formated = Number::abbreviate($video->views);
-                $video->created_at_formated  = $video->created_at->diffForHumans();
+                $video->created_at_format    = $video->created_at->diffForHumans();
+                return $video;
+            });
+
+            $category->setRelation('videos', $videos);
+
+            return $category;
+        });
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Home page videos retrieved successfully.',
+            'data'    => $categories,
+        ], 200);
+    }
+    public function allVideo(Request $request)
+    {
+        $perPage    = $request->input('per_page', 10);
+        $categoryId = $request->input('category_id');
+
+        $query = Video::with('user:id,channel_name,avatar')
+            ->latest('id');
+
+        if ($categoryId) {
+            $query->where('category_id', $categoryId);
+        }
+
+        $videos = $query->paginate($perPage);
+
+        // Format each video in the collection
+        $videos->getCollection()->transform(function ($video) {
+            $video->views_count_formated = Number::abbreviate($video->views);
+            $video->created_at_format    = $video->created_at->diffForHumans();
+            return $video;
+        });
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'All videos retrieved successfully.',
+            'data'    => $videos, // includes pagination meta
+        ], 200);
+    }
+
+    public function promotionalVideoWithLimitation(Request $request)
+    {
+        $videoLimit = $request->video_limit ?? 6;
+
+        $categories = Category::all();
+
+        $categories->map(function ($category) use ($videoLimit) {
+
+            // Get non-promoted videos with eager loaded user
+            $nonPromotedVideos = $category->videos()
+                ->with('user:id,channel_name,avatar')
+                ->where('is_promoted', 1)
+                ->where('visibility', 'Everyone')
+                ->where('is_suspend', 0)
+                ->latest('id')
+                ->limit($videoLimit)
+                ->get()
+                ->shuffle();
+            $videos = $nonPromotedVideos->map(function ($video) {
+                $video->views_count_formated = Number::abbreviate($video->views);
+                $video->created_at_format    = $video->created_at->diffForHumans();
                 return $video;
             });
 
@@ -225,8 +327,44 @@ class HomeController extends Controller
 
         return response()->json([
             'status'  => true,
-            'message' => 'Home page videos retrieved successfully.',
+            'message' => 'Promotional videos retrieved successfully.',
             'data'    => $categories,
         ], 200);
+    }
+    public function promotionalVideoWithPagination(Request $request)
+    {
+        $videoLimit = $request->video_limit ?? 6;
+        $perPage    = $request->input('per_page', 10);
+
+        $categories = Category::paginate($perPage);
+
+        $categories->getCollection()->transform(function ($category) use ($videoLimit) {
+            $promotedVideos = $category->videos()
+                ->with('user:id,channel_name,avatar')
+                ->where('is_promoted', 1)
+                ->where('visibility', 'Everyone')
+                ->where('is_suspend', 0)
+                ->latest('id')
+                ->limit($videoLimit)
+                ->get();
+
+            // Format each video
+            $promotedVideos = $promotedVideos->map(function ($video) {
+                $video->views_count_formated = Number::abbreviate($video->views);
+                $video->created_at_format    = $video->created_at->diffForHumans();
+                return $video;
+            });
+
+            $category->setRelation('videos', $promotedVideos);
+
+            return $category;
+        });
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Promotional videos retrieved successfully.',
+            'data'    => $categories,
+        ], 200);
+
     }
 }

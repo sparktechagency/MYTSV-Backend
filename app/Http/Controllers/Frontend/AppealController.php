@@ -93,6 +93,7 @@ class AppealController extends Controller
                 $appeal->save();
 
                 $video->is_suspend     = false;
+                $video->visibility     = 'Everyone';
                 $video->suspend_reason = null;
                 $video->suspend_until  = null;
                 $video->save();

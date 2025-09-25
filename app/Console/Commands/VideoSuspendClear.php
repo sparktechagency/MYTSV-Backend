@@ -35,9 +35,10 @@ class VideoSuspendClear extends Command
             $video->is_suspend     = false;
             $video->suspend_reason = null;
             $video->suspend_until  = null;
+            $video->visibility  = 'Everyone';
             $video->save();
 
-            $this->info("Unsuspended video: {$video->title} (ID: {$video->id})");
+            $this->info("Unsuspend video: {$video->title} (ID: {$video->id})");
         }
 
         $this->info('Expired suspensions cleared successfully.');

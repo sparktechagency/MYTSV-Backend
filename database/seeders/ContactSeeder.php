@@ -12,9 +12,9 @@ class ContactSeeder extends Seeder
     public function run(): void
     {
         Contact::create([
-            'email'   => 'example@gmail.com',
-            'phone'   => '+98562354785',
-            'address' => 'Dhaka, Bangladesh',
+            'email'   => 'info@mytsv.com',
+            'phone'   => '+1 630 297 7501',
+            'address' => '20570 N Milwaukee Ave Deerfield IL 60015',
         ]);
     }
 }

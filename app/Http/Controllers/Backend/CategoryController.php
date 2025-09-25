@@ -15,7 +15,7 @@ class CategoryController extends Controller
      */
     public function index(Request $request)
     {
-        $categories = Category::paginate($request->per_page ?? 10);
+        $categories = Category::latest('id')->paginate($request->per_page ?? 10);
         return response()->json([
             'status'  => true,
             'message' => 'Category retreived successfully.',

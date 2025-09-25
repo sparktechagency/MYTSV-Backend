@@ -37,9 +37,9 @@ class WatchHistoryController extends Controller
         });
 
         return response()->json([
-            'status'  => true,
+            'status' => true,
             'message' => 'Watch history retrieved successfully.',
-            'data'    => $watch_histories,
+            'data' => $watch_histories,
         ], 200);
     }
 
@@ -62,13 +62,13 @@ class WatchHistoryController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'status'  => false,
+                'status' => false,
                 'message' => $validator->errors()->first(),
-                'errors'  => $validator->errors(),
+                'errors' => $validator->errors(),
             ], 422);
         }
 
-        $user  = Auth::user();
+        $user = Auth::user();
         $video = Video::find($request->video_id);
         $video->increment('views');
 
@@ -80,21 +80,21 @@ class WatchHistoryController extends Controller
                 $watchHistoryExists->delete();
             }
             $watchHistory = WatchHistory::create([
-                'user_id'  => $user->id,
+                'user_id' => $user->id,
                 'video_id' => $video->id,
             ]);
 
             return response()->json([
-                'status'  => true,
+                'status' => true,
                 'message' => 'Watch history added successfully.',
-                'data'    => $watchHistory,
+                'data' => $watchHistory,
             ], 200);
         }
 
         return response()->json([
-            'status'  => true,
+            'status' => true,
             'message' => "Watch history is paused, so new entries won't be added.",
-            'data'    => null,
+            'data' => null,
         ], 200);
     }
 
@@ -132,14 +132,14 @@ class WatchHistoryController extends Controller
             $watch_history->delete();
 
             return response()->json([
-                'status'  => true,
+                'status' => true,
                 'message' => 'Single watch history deleted successfully.',
-                'data'    => $watch_history,
+                'data' => $watch_history,
             ], 200);
         } catch (Exception $e) {
             Log::error('Single watch history deleted error: ' . $e->getMessage());
             return response()->json([
-                'status'  => false,
+                'status' => false,
                 'message' => 'data not found',
             ]);
         }
@@ -156,22 +156,26 @@ class WatchHistoryController extends Controller
     }
     public function pausePlayWatchHistory()
     {
-        $user                      = Auth::user();
+        $user = Auth::user();
         $user->pause_watch_history = $user->pause_watch_history == '0' ? '1' : '0';
         $user->save();
 
         return response()->json([
-            'status'  => true,
-            'message' => $user->pause_watch_history == '0' ? 'Watch history is now active.' : 'Watch history is paused.',
+            'status' => true,
+            'pause_watch_history' => (bool) $user->pause_watch_history,
+            'message' => $user->pause_watch_history == '0'
+                ? 'Watch history is now active.'
+                : 'Watch history is paused.',
         ], 200);
     }
+
 
     public function bulkDeleteWatchHistory()
     {
         try {
             $deletedRows = WatchHistory::where('user_id', Auth::id())->delete();
             return response()->json([
-                'status'  => true,
+                'status' => true,
                 'message' => 'Bulk watch history deleted successfully.',
             ], 200);
 
@@ -179,7 +183,7 @@ class WatchHistoryController extends Controller
             Log::error('Bulk watch history delete error: ' . $e->getMessage());
 
             return response()->json([
-                'status'  => false,
+                'status' => false,
                 'message' => 'Something went wrong while deleting.',
             ], 500);
         }

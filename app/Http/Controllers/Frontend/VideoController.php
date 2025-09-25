@@ -2,6 +2,7 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\DislikedVideo;
 use App\Models\LikedVideo;
 use App\Models\User;
@@ -23,16 +24,19 @@ class VideoController extends Controller
      */
     public function index(Request $request)
     {
-        $videos = Video::withCount(['likes', 'dislikes', 'comments', 'commentReplies'])->where('user_id', Auth::id());
+
+        $videos = Video::with('user:id,channel_name,avatar')->withCount(['likes', 'dislikes', 'comments', 'commentReplies'])->where('user_id', Auth::id());
         if ($request->search) {
             $videos = $videos->where('title', 'LIKE', '%' . $request->search . '%');
         }
-        $videos = $videos->paginate($request->per_page ?? 10);
+        $videos = $videos->latest('id')->paginate($request->per_page ?? 10);
 
         $videos->getCollection()->transform(function ($video) {
-            $video->total_comment = $video->comments_count + $video->comment_replies_count;
-            $video->created_date  = $video->created_at->format('d-m-Y');
-            $video->created_time  = $video->created_at->format('h:i A');
+            $video->total_comment        = $video->comments_count + $video->comment_replies_count;
+            $video->created_date         = $video->created_at->format('d-m-Y');
+            $video->created_time         = $video->created_at->format('h:i A');
+            $video->views_count_formated = Number::abbreviate($video->views);
+            $video->created_at_format    = $video->created_at->diffForHumans();
             return $video;
         });
         return response()->json([
@@ -239,11 +243,15 @@ class VideoController extends Controller
                 $file->move(public_path('uploads/video'), $name);
                 $video->video = $name;
             }
-            $video->link       = $request->link;
-            $video->states     = $request->states;
-            $video->city       = $request->city;
-            $video->tags       = $request->tags;
-            $video->visibility = $request->visibility;
+            $video->link   = $request->link;
+            $video->states = $request->states;
+            $video->city   = $request->city;
+            $video->tags   = $request->tags;
+            if ($video->is_suspend == 1) {
+                $video->visibility = 'Only me';
+            } else {
+                $video->visibility = $request->visibility;
+            }
             $video->save();
 
             return response()->json([
@@ -353,6 +361,12 @@ class VideoController extends Controller
         }
         try {
             $video             = Video::findOrFail($id);
+            if($video->is_suspend==1){
+                return response()->json([
+                'status'  => false,
+                'message' => 'You are not able to change the visibility because this video already suspended.',
+            ]);
+            }
             $video->visibility = $request->visibility;
             $video->save();
             return response()->json([
@@ -477,4 +491,54 @@ class VideoController extends Controller
             'data'    => $data,
         ], 200);
     }
+
+    public function globalSearchVideos(Request $request)
+    {
+        // Video query
+        $videos = Video::with('user:id,channel_name,avatar')
+            ->withCount(['likes', 'dislikes', 'comments', 'commentReplies'])
+            ->latest('id');
+
+        if ($request->service) {
+            $videos->where('category_id', $request->service);
+        }
+        if ($request->state) {
+            $videos->where('states', 'LIKE', '%' . $request->state . '%');
+        }
+        if ($request->city) {
+            $videos->where('city', 'LIKE', '%' . $request->city . '%');
+        }
+        if ($request->search) {
+            if (str_starts_with($request->search, '#')) {
+                $tag = ltrim($request->search, '#');
+                $videos->where('tags', 'LIKE', '%' . $tag . '%');
+            } else {
+                $videos->where('title', 'LIKE', '%' . $request->search . '%');
+            }
+        }
+
+        $videos = $videos->paginate($request->per_page ?? 10);
+
+        $videos->getCollection()->transform(function ($video) {
+            $video->total_comment        = $video->comments_count + $video->comment_replies_count;
+            $video->created_date         = $video->created_at->format('d-m-Y');
+            $video->created_time         = $video->created_at->format('h:i A');
+            $video->views_count_formated = Number::abbreviate($video->views);
+            $video->created_at_format    = $video->created_at->diffForHumans();
+            return $video;
+        });
+
+        // Get all categories once
+        $categories = Category::select('id', 'name')->where('id', $request->service)->get();
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Videos and categories retrieved successfully.',
+            'data'    => [
+                'categories' => $categories,
+                'videos'     => $videos,
+            ],
+        ], 200);
+    }
+
 }

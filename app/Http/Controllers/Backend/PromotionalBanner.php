@@ -3,8 +3,10 @@ namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
 use App\Models\Banner;
+use App\Models\SystemSetting;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
@@ -15,10 +17,16 @@ class PromotionalBanner extends Controller
      */
     public function index(Request $request)
     {
-        $banners = Banner::paginate($request->per_page ?? 10);
+        $system_settings=SystemSetting::findOrFail(1);
+        $banners = Banner::query();
+    if (!Auth::check() || (Auth::check() && Auth::user()->role !== 'ADMIN')) {
+        $banners->where('is_active', 1);
+    }
+        $banners = $banners->latest('id')->paginate($request->per_page ?? 10);
         return response()->json([
             'status'  => true,
-            'message' => 'Banner retreived successfully.',
+            'message' => 'Banner retrieved successfully.',
+            'system_settings'    => $system_settings,
             'data'    => $banners,
         ], 200);
     }
@@ -154,5 +162,25 @@ class PromotionalBanner extends Controller
                 'message' => 'data not found',
             ]);
         }
+    }
+
+     public function toggleBannerStatus($id)
+    {
+        $banner = Banner::find($id);
+        if (! $banner) {
+             return response()->json([
+            'status'  => false,
+            'message' => 'Banner not found.',
+        ], 404);
+        }
+
+        $banner->is_active = ! $banner->is_active;
+        $banner->save();
+
+          return response()->json([
+            'status'  => true,
+            'message' =>"Banner status has been changed successfully.",
+            'data'    => $banner,
+        ], 200);
     }
 }

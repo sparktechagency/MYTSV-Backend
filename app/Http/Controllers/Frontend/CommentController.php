@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Comment;
 use App\Models\CommentReaction;
 use App\Models\CommentReply;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -162,16 +163,31 @@ class CommentController extends Controller
         if ($reaction) {
             $reaction->delete();
             $status = 'Comment reaction removed';
+            $action = 'removed';
+
         } else {
             $reaction = CommentReaction::create([
                 'user_id'    => Auth::id(),
                 'comment_id' => $request->comment_id,
             ]);
             $status = 'Comment reaction added';
+            $action = 'added';
         }
+
+        $reactionsCount = CommentReaction::where('comment_id', $request->comment_id)->count();
+
+        $comment         = Comment::find($request->comment_id);
+
+        $isReact = CommentReaction::where('comment_id', $request->comment_id)
+            ->where('user_id', Auth::id())
+            ->exists();
+
         return response()->json([
-            'status'  => true,
-            'message' => $status,
+            'status'                 => true,
+            'message'                => $status,
+            'action'                 => $action,
+            'reactions_count_format' => Number::abbreviate($reactionsCount),
+            'is_react'               => $isReact,
         ], 200);
     }
 

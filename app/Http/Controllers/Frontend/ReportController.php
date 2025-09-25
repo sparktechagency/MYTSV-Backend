@@ -54,7 +54,6 @@ class ReportController extends Controller
 
     public function getAdminReport(Request $request)
     {
-
         $reports = Report::with([
             'user:id,name,avatar',
             'video' => function ($query) {
@@ -73,7 +72,7 @@ class ReportController extends Controller
                     });
             });
         }
-        $reports = $reports->latest('id')->paginate($request->per_page ?? 10);
+        $reports = $reports->whereNotNull('reason')->whereNotNull('issue')->latest('id')->paginate($request->per_page ?? 10);
         $data    = [
             'total_appeals' => Appeal::count(),
             'reports'       => $reports,
@@ -93,12 +92,12 @@ class ReportController extends Controller
                 'video.user:id,channel_name,avatar',
             ])->findOrFail($id);
 
-            $video                            = $report->video;
-            $report->video->views_count       = Number::abbreviate($report->video->views);
-            $report->video->likes_count       = $video ? Number::abbreviate($video->likes()->count()) : 0;
-            $report->video->dislikes_count    = $video ? Number::abbreviate($video->dislikes()->count()) : 0;
-            $report->video->comments_count    = $video ? Number::abbreviate($video->commentReplies()->count()) : 0;
-            $report->video->created_at_format = $report->video->created_at->diffForHumans();
+            $video                                   = $report->video;
+            $report->video->views_count_formatted    = Number::abbreviate($report->video->views);
+            $report->video->likes_count_formatted    = $video ? Number::abbreviate($video->likes()->count()) : 0;
+            $report->video->dislikes_count_formatted = $video ? Number::abbreviate($video->dislikes()->count()) : 0;
+            $report->video->comments_count_formatted = $video ? Number::abbreviate($video->commentReplies()->count()) : 0;
+            $report->video->created_at_format        = $report->video->created_at->diffForHumans();
             return response()->json([
                 'status'  => true,
                 'message' => 'Report detail retreived successfully.',
@@ -118,6 +117,8 @@ class ReportController extends Controller
         $validator = Validator::make($request->all(), [
             'action_name'  => 'required|in:Suspend for 7 days,Suspend for 30 days,Give a warning,Suspend permanently',
             'action_issue' => 'required|string',
+            'make_new'     => 'nullable|in:yes,no',
+            'video_id'     => 'required_if:make_new,yes',
         ]);
 
         if ($validator->fails()) {
@@ -128,11 +129,20 @@ class ReportController extends Controller
             ], 422);
         }
         try {
-            $report          = Report::findOrFail($id);
+            if ($request->make_new == 'yes') {
+                $report = Report::create([
+                    'user_id'  => Auth::user()->id,
+                    'video_id' => $request->video_id,
+                ]);
+                $report = Report::findOrFail($report->id);
+            } else {
+                $report = Report::findOrFail($id);
+            }
             $video           = Video::findOrFail($report->video_id);
             $video_publisher = User::where('id', $video->user_id)->first();
             if ($request->action_name == 'Suspend for 7 days') {
                 $video->is_suspend     = true;
+                $video->visibility     = 'Only me';
                 $video->suspend_reason = 'Suspend for 7 days';
                 $video->suspend_until  = now()->addDays(7);
                 $video->save();
@@ -145,6 +155,7 @@ class ReportController extends Controller
 
             } elseif ($request->action_name == 'Suspend for 30 days') {
                 $video->is_suspend     = true;
+                $video->visibility     = 'Only me';
                 $video->suspend_reason = 'Suspend for 30 days';
                 $video->suspend_until  = now()->addDays(30);
                 $video->save();
@@ -170,6 +181,7 @@ class ReportController extends Controller
             } elseif ($request->action_name == 'Suspend permanently') {
                 $video->is_suspend     = true;
                 $video->suspend_reason = 'Suspend permanently';
+                $video->visibility     = 'Only me';
                 $video->suspend_until  = null;
                 $video->save();
                 $data = [
@@ -217,9 +229,22 @@ class ReportController extends Controller
 
     public function getReport(Request $request)
     {
-        $reports = Report::with('video:id,user_id,type,title,description,thumbnail,video,link,suspend_until,suspend_reason')->withCount('appeal')->wherehas('video', function ($query) {
-            $query->where('user_id', Auth::user()->id);
-        })->whereNotNull('action_name')->whereNot('action_name', 'Give a warning')->latest('id')->paginate($request->per_page ?? 10);
+        $search  = $request->input('search');
+        $reports = Report::with('video:id,user_id,type,title,description,thumbnail,video,link,suspend_until,suspend_reason')->withCount('appeal')
+            ->whereHas('video', function ($query) use ($search) {
+                $query->where('user_id', Auth::id());
+
+                if ($search) {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('title', 'like', "%{$search}%")
+                            ->orWhere('description', 'like', "%{$search}%");
+                    });
+                }
+            })
+            ->wherehas('video', function ($query) {
+                $query->where('user_id', Auth::user()->id);
+            })->whereNotNull('action_name')->whereNot('action_name', 'Give a warning')->latest('id')
+            ->paginate($request->per_page ?? 10);
         $reports->getCollection()->transform(function ($report) {
             if (in_array($report->video->suspend_reason, ['Suspend for 7 days', 'Suspend for 30 days'])) {
                 $report->action_result = 'This video won’t go anyone feeds until ' . Carbon::parse($report->video->suspend_until)->format('jS F, Y');

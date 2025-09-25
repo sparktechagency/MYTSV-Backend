@@ -1,14 +1,15 @@
 <?php
 namespace App\Http\Controllers\Frontend;
 
-use App\Http\Controllers\Controller;
-use App\Models\Transactions;
 use Exception;
+use Stripe\Stripe;
+use App\Models\User;
+use Stripe\PaymentIntent;
+use App\Models\Transactions;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
-use Stripe\PaymentIntent;
-use Stripe\Stripe;
 
 class StripePaymentController extends Controller
 {
@@ -48,6 +49,7 @@ class StripePaymentController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'reason'            => 'required|string|in:Uploading video,Promoting YouTube Link,Onsite account creation',
+            'user_id'            => 'required',
             'amount'            => 'required',
             'payment_intent_id' => 'required',
         ]);
@@ -58,8 +60,13 @@ class StripePaymentController extends Controller
                 'errors'  => $validator->errors(),
             ], 422);
         }
+        if($request->reason=='Onsite account creation'){
+            $user=User::find($request->user_id);
+            $user->is_pay=1;
+            $user->save();
+        }
         $payment = Transactions::create([
-            'user_id'           => Auth::user()->id,
+            'user_id'           => $request->user_id,
             'reason'            => $request->reason,
             'amount'            => $request->amount,
             'payment_intent_id' => $request->payment_intent_id,

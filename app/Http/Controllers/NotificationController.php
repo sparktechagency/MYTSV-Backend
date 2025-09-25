@@ -2,17 +2,29 @@
 namespace App\Http\Controllers;
 
 use Exception;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class NotificationController extends Controller
 {
-    public function notifications()
+     public function notifications(Request $request)
     {
-        $notifications = Auth::user()->notifications;
+        $user          = Auth::user();
+        $perPage       = $request->input('per_page', 20);
+        $notifications = $user->notifications()
+            ->orderByDesc('created_at')
+            ->paginate($perPage);
+        $unreadCount = $user->unreadNotifications()->count();
+
+        $data = [
+            'unread_notifications_count' => $unreadCount,
+            'notifications'              => $notifications,
+        ];
+
         return response()->json([
             'status'  => true,
-            'message' => 'Notification retreived successfully.',
-            'data'    => $notifications,
+            'message' => 'Notifications retrieved successfully.',
+            'data'    => $data,
         ], 200);
     }
 
