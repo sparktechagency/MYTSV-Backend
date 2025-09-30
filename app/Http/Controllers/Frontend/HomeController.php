@@ -261,6 +261,12 @@ class HomeController extends Controller
             return $category;
         });
 
+            $sortedCategories = $categories->getCollection()->sortByDesc(function ($category) {
+        return $category->videos->count() > 0;
+    })->values();
+
+    // Replace the collection in paginator
+    $categories->setCollection($sortedCategories);
         return response()->json([
             'status'  => true,
             'message' => 'Home page videos retrieved successfully.',
