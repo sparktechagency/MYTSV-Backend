@@ -113,13 +113,13 @@ Route::group(['middleware' => 'api'], function ($router) {
             Route::resource('comments', CommentController::class);
             Route::resource('replies', CommentReplyController::class);
             Route::get('about-us', [SettingController::class, 'getAboutUs']);
-            Route::get('contact', [SettingController::class, 'getContact']);
             Route::get('get-report-detail/{id}', [ReportController::class, 'getReportDetail']);
 
         });
     });
 
     // token free routes
+    Route::get('contact', [SettingController::class, 'getContact']);
     Route::get('page', [SettingController::class, 'getPage']);
     Route::resource('categories', CategoryController::class)->only('index');
     Route::resource('videos', VideoController::class)->only('show');
