@@ -53,7 +53,7 @@ class User extends Authenticatable implements JWTSubject
 
     public function getAvatarAttribute($avatar)
     {
-        return asset($avatar);
+        return asset('uploads/user/'.$avatar);
     }
     public function getCoverImageAttribute($image)
     {
