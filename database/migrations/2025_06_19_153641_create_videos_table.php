@@ -21,9 +21,9 @@ return new class extends Migration
             $table->string('thumbnail');
             $table->string('video')->nullable();
             $table->longText('link')->nullable();
-            $table->string('states');
-            $table->string('city');
-            $table->json('tags');
+            $table->string('states')->nullable();
+            $table->string('city')->nullable();
+            $table->json('tags')->nullable();
             $table->boolean('is_promoted')->default(false);
             $table->unsignedBigInteger('views')->default(0);
             $table->enum('visibility', ['Everyone', 'Only me'])->default('Everyone');
