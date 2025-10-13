@@ -46,7 +46,7 @@ class UserSeeder extends Seeder
             ['channel_name' => 'ramiz izzatov', 'name' => 'ramiz izzatov', 'email' => 'ramizizzy@gmail.com', 'password' => '$2y$12$F3OtqhN4jqjPir0rHzUfiOGMV3wI03hXpV7sFbZovmelH6jnTFIQ.', 'role' => 'USER'],
             ['channel_name' => 'Inga Tice', 'name' => 'Inga Tice', 'email' => 'ticeinga@gmail.com', 'password' => '$2y$12$IemJADmx7Wd/cGhGnZnxZe0nZGFiz9PJMWjLACs7WwegsF.8meXZ6', 'role' => 'USER'],
             ['channel_name' => 'George George', 'name' => 'George George', 'email' => 'giorgi6636@gmail.com', 'password' => '$2y$12$zrOOResuQ3OX9IsCaVEeO.3nkomu68j7uZD1npfOOrCJdIk35HUgu', 'role' => 'USER'],
-            ['channel_name' => 'Kazi Omar Faruk', 'name' => 'Kazi Omar Faruk', 'email' => 'kaziomar.bdcalling1@gmail.com', 'password' => '$2y$12$0MwmzJFm/IDX5np7Wo3lJelPSow7EuwQjnj7/wf5XTbCX6T/OSO0O', 'role' => 'USER'],
+            ['channel_name' => 'System User', 'name' => 'System User', 'email' => 'user@gmail.com', 'password' => '$2y$12$S9Fl9bPFvZDyqdef6EdzRuUljRdDpg4zZmvlUI46BM3.XsSJ0ZnFa', 'role' => 'USER'],
             ['channel_name' => 'Kazi Omar Faruk', 'name' => 'Kazi Omar Faruk', 'email' => 'kaziomar.bdcalling@gmail.com', 'password' => '$2y$12$0MwmzJFm/IDX5np7Wo3lJelPSow7EuwQjnj7/wf5XTbCX6T/OSO0O', 'role' => 'USER'],
             ['channel_name' => 'bbb', 'name' => 'Aybek', 'email' => 'aybekizzatov@yahoo.com', 'password' => '$2y$12$1m9xnIouk57DFkaLqLoMY.SQC2GZB6oAVEIjmJe.25CfCC1cJzqt.', 'role' => 'USER'],
             ['channel_name' => 'Kazi Omar Faruk', 'name' => 'Kazi Omar Faruk', 'email' => 'softeng.kaziomar@gmail.com', 'password' => '$2y$12$jUccLc8lw3OXMXJTvQxm1ejgV0jEgUwh3KxIzIxhjJUNlygDOc4aC', 'role' => 'USER'],
