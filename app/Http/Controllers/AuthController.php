@@ -407,8 +407,8 @@ class AuthController extends Controller
                 $validator = Validator::make($request->all(), [
                     'name' => 'required|string|max:255',
                     'channel_name' => 'required|string|max:255',
-                    'contact' => 'required|string|max:255',
-                    'bio' => 'required|string',
+                    // 'contact' => 'required|string|max:255',
+                    // 'bio' => 'required|string',
                     'locations' => 'required|json',
                     'services' => 'required|json',
                     'image' => 'sometimes|image|mimes:png,jpg,jpeg',
